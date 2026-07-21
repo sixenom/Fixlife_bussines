@@ -38,8 +38,5 @@ Config.Computers = {
             username = 'Sixenom',
             password = '12345678'
         },
-        access = {
-            police = 4
-        }
     }
 }

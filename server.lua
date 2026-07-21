@@ -2,10 +2,8 @@ local objects, occupied, inside = {}, {}, {}
 
 local function hasAccess(src, index)
     local player = exports.qbx_core:GetPlayer(src)
-    local access = Config.Computers[index].access
     local job = player and player.PlayerData.job
-    local minimumGrade = job and access and access[job.name]
-    return minimumGrade ~= nil and (job.grade.level or -1) >= minimumGrade
+    return job and job.isboss == true
 end
 
 local function getManager(src, index)

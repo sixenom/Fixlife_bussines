@@ -40,3 +40,46 @@ header { display: flex; align-items: flex-start; justify-content: space-between;
 .finance-tools { display: grid; justify-items: end; gap: 14px; }.finance-tools button { padding: 10px 14px; border: 0; border-radius: 6px; color: #fff; background: #2b9b6b; font-size: 11px; cursor: pointer; }.finance-tools button:hover { background: #35b77d; }
 .vehicle-status { display: block; margin-top: 4px; color: #61d39a; font-size: 9px; font-style: normal; }
 .transactions { display: grid; gap: 3px; }.transaction { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #233044; }.transaction-icon { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 6px; font-weight: bold; }.transaction-icon.positive { color: #62d39c; background: #1d4034; }.transaction-icon.negative { color: #ed747b; background: #402329; }.transaction div { flex: 1; }.transaction strong, .transaction small { display: block; }.transaction strong { color: #d9e2ed; font-size: 10px; }.transaction small { margin-top: 3px; color: #718198; font-size: 9px; }.transaction b { font-size: 11px; }.transaction b.positive { color: #62d39c; }.transaction b.negative { color: #ed747b; }
+
+/* Inspirado en origen_police: panel compacto, translúcido y con acento cian. */
+:root { --accent: #8adfff; --green: #8aff8a; --cubic: cubic-bezier(0, .53, .11, .995); }
+* { scrollbar-width: thin; scrollbar-color: #ffffffaa transparent; }
+body { font-family: 'Trebuchet MS', Arial, sans-serif; }
+#panel { width: min(1280px, calc(100vw - 7vw)); min-height: 78vh; border: 1px solid #ffffff20; border-radius: 10px; background: radial-gradient(ellipse at top right, #2355a144, #050b14f2 58%), #09111e; box-shadow: 0 0 45px #000b, inset 0 0 50px #2355a11a; animation: panel-in .55s var(--cubic) both; }
+#close { z-index: 2; color: #ffffff9c; transition: .25s var(--cubic); }
+#close:hover { color: var(--accent); transform: rotate(90deg) scale(1.15); }
+#login-screen { padding: 7vh 4vw; }
+.logo-fallback { margin-bottom: 4vh; color: #fff; text-transform: uppercase; letter-spacing: 4px; }
+.logo-fallback span { color: var(--accent); text-shadow: 0 0 22px var(--accent); }
+.logo-fallback img { filter: drop-shadow(0 0 18px #8adfff88); }
+.eyebrow, .modal-kicker { color: var(--accent); text-shadow: 0 0 12px #8adfff88; font-size: 12px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; }
+#login-form { gap: 14px; }
+#login-form label { grid-template-columns: 1fr; color: #ffffffb8; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+input { padding: 12px 14px; border: 1px solid #ffffff24; border-radius: 5px; background: #00000042; outline: 0; transition: .3s var(--cubic); }
+input:focus { border-color: var(--accent); box-shadow: 0 0 18px #8adfff38; }
+#submit, .hire, .modal-actions button[type='submit'] { border: 1px solid #8adfff66; border-radius: 5px; background: linear-gradient(45deg, #2355a1, #3aa6f3ad); box-shadow: 0 0 16px #2355a144; transition: .3s var(--cubic); }
+#submit { text-transform: uppercase; letter-spacing: 1px; }
+#submit:hover, .hire:hover, .modal-actions button[type='submit']:hover { background: linear-gradient(45deg, #4580a3, #8adfff); color: #07101c; transform: translateY(-2px); }
+aside { border-right-color: #ffffff18; background: #00000022; }
+.brand > span { color: var(--accent); text-shadow: 0 0 15px var(--accent); }
+nav button { text-transform: uppercase; transition: .35s var(--cubic); }
+nav button.active, nav button:hover { color: #fff; background: linear-gradient(45deg, #2355a1aa, #8adfff24); box-shadow: inset 3px 0 var(--accent), 0 0 18px #2355a122; transform: translateX(3px); }
+nav button.active b { color: var(--accent); text-shadow: 0 0 10px var(--accent); }
+.dashboard, #members-screen, #vehicles-screen, #finance-screen { background: transparent; }
+header h1, .welcome h2, .card-title h3, .modal-card h2 { text-transform: uppercase; font-weight: 300; letter-spacing: 1px; }
+.status { background: var(--green); box-shadow: 0 0 12px var(--green); }
+.avatar { border-color: var(--accent); background: #2355a144; box-shadow: 0 0 14px #8adfff33; }
+.date { color: var(--green); text-shadow: 0 0 10px #8aff8a66; }
+.stats article, .card, .member-row, .vehicle-row { border-color: #ffffff1c; border-radius: 7px; background: linear-gradient(145deg, #ffffff0b, #0000002b); transition: .35s var(--cubic); }
+.stats article:hover, .card:hover, .member-row:hover, .vehicle-row:hover { border-color: #8adfff55; transform: translateY(-3px); box-shadow: 0 12px 30px #0008, 0 0 18px #8adfff16; }
+.icon.blue, .vehicle-icon, .action b, .finance-icon { color: var(--accent); background: #2355a155; }
+.action { transition: .3s var(--cubic); }
+.action:hover { padding-left: 8px; border-color: #8adfff55; }
+.member-action, .fleet-count { border-color: #8adfff3d; color: var(--accent); background: #2355a133; transition: .25s var(--cubic); }
+.member-action:hover { color: #07101c; background: var(--accent); }
+.finance-hero { border-color: #8adfff38; background: linear-gradient(115deg, #2355a144, #00a9a522); box-shadow: 0 0 24px #2355a122; }
+#modal { background: radial-gradient(ellipse at center, #00000091, #000000e8); backdrop-filter: blur(4px); }
+.modal-card { border-color: #8adfff4d; border-radius: 7px; background: #09111ef5; box-shadow: 0 0 35px #2355a155; animation: panel-in .35s var(--cubic) both; }
+@keyframes panel-in { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes view-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+#admin-screen > :not([hidden]) { animation: view-in .4s var(--cubic) both; }
