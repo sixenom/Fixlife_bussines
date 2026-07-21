@@ -4,20 +4,75 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="style.css">
-  <title>Gestión</title>
+  <title>Inicio de sesión</title>
 </head>
 <body>
   <main id="panel" hidden>
     <button id="close" aria-label="Cerrar">×</button>
-    <p class="eyebrow">SISTEMA CENTRAL</p>
-    <h1 id="title">Terminal de gestión</h1>
-    <p class="subtitle">Facciones y negocios</p>
-    <section>
-      <article><span>01</span><div><h2>Gestión de miembros</h2><p>Próximamente</p></div></article>
-      <article><span>02</span><div><h2>Finanzas</h2><p>Próximamente</p></div></article>
-      <article><span>03</span><div><h2>Operaciones</h2><p>Próximamente</p></div></article>
+    <section id="login-screen">
+      <div id="logo" class="logo-fallback"><span>◉</span><strong>SECuroSERV</strong></div>
+      <p class="eyebrow">INICIA SESIÓN</p>
+      <form id="login-form">
+        <label>Usuario <input id="username" autocomplete="username" readonly></label>
+        <label>Contraseña <input id="password" type="password" autocomplete="current-password" readonly></label>
+        <button id="submit" type="submit">Iniciar sesión</button>
+      </form>
     </section>
-    <footer>ESC · Cerrar</footer>
+    <section id="admin-screen" hidden>
+      <aside>
+        <div class="brand"><span>◉</span><strong>LSPD<span>ADMIN</span></strong></div>
+        <nav>
+          <button class="active" data-view="dashboard"><b>▦</b> Resumen</button>
+          <button data-view="members"><b>♙</b> Miembros</button>
+          <button data-view="vehicles"><b>▣</b> Vehículos</button>
+          <button data-view="finance"><b>$</b> Finanzas</button>
+          <button><b>⚙</b> Configuración</button>
+        </nav>
+        <small>v1.0.0 · Sistema interno</small>
+      </aside>
+      <div class="dashboard">
+        <header>
+          <div><span class="status"></span><span>Oficial conectado</span><h1 id="title">Terminal de gestión</h1></div>
+          <div class="avatar">S</div>
+        </header>
+        <div class="welcome"><div><p>BIENVENIDO DE NUEVO</p><h2>Panel administrativo</h2></div><span class="date">● Sistema operativo</span></div>
+        <div class="stats">
+          <article><span class="icon red">♙</span><div><small>MIEMBROS ACTIVOS</small><strong id="stat-members">—</strong><em>Ver plantilla</em></div></article>
+          <article><span class="icon blue">$</span><div><small>BALANCE DEPARTAMENTO</small><strong id="stat-balance">$ —</strong><em>Consultar finanzas</em></div></article>
+          <article><span class="icon green">✓</span><div><small>ESTADO DEL SERVICIO</small><strong>Activo</strong><em>Sin incidencias</em></div></article>
+        </div>
+        <div class="lower">
+          <section class="card"><div class="card-title"><h3>Acciones rápidas</h3><span>PRÓXIMAMENTE</span></div><button class="action"><b>♙</b><div><strong>Gestionar miembros</strong><small>Rangos, permisos y plantilla</small></div><i>›</i></button><button class="action"><b>$</b><div><strong>Consultar finanzas</strong><small>Movimientos y presupuesto</small></div><i>›</i></button></section>
+          <section class="card activity"><div class="card-title"><h3>Actividad reciente</h3><span>ACTUALIZADO AHORA</span></div><p class="empty">No hay actividad registrada todavía.</p></section>
+        </div>
+      </div>
+      <div id="members-screen" hidden>
+        <header><div><span class="status"></span><span>Gestión de personal</span><h1>Miembros</h1></div><button class="hire" id="hire">+ Contratar</button></header>
+        <div class="member-toolbar"><span id="member-count">Cargando personal...</span><input id="member-search" placeholder="Buscar miembro..."></div>
+        <div class="member-list" id="member-list"></div>
+      </div>
+      <div id="vehicles-screen" hidden>
+        <header><div><span class="status"></span><span>Flota del trabajo</span><h1>Vehículos</h1></div><span class="fleet-count" id="fleet-count">Cargando flota...</span></header>
+        <div class="member-toolbar"><span>Vehículos personales asignados al trabajo</span><input id="vehicle-search" placeholder="Buscar placa o propietario..."></div>
+        <div class="vehicle-list" id="vehicle-list"></div>
+      </div>
+      <div id="finance-screen" hidden>
+        <header><div><span class="status"></span><span>Control económico</span><h1>Finanzas</h1></div><span class="fleet-count" id="finance-provider">Cargando cuenta...</span></header>
+        <div class="finance-hero"><div><p>SALDO DE LA CUENTA DEL TRABAJO</p><strong id="finance-balance">$ —</strong><small>Cuenta administrada por el sistema bancario</small></div><div class="finance-tools"><span class="finance-icon">$</span><button id="finance-deposit">+ Recargar cuenta</button></div></div>
+        <div class="finance-grid"><section class="card"><div class="card-title"><h3>Movimientos recientes</h3><span>ÚLTIMOS 20</span></div><div id="finance-transactions" class="transactions"></div></section><section class="card"><div class="card-title"><h3>Resumen</h3><span>ESTADO</span></div><div class="finance-line"><span>Cuenta</span><strong id="finance-status">Sin conexión</strong></div><div class="finance-line"><span>Trabajo</span><strong id="finance-job">—</strong></div></section></div>
+      </div>
+    </section>
+    <div id="modal" hidden>
+      <div class="modal-card">
+        <button id="modal-close" aria-label="Cerrar">×</button>
+        <p class="modal-kicker">GESTIÓN DE PERSONAL</p>
+        <h2 id="modal-title">Acción</h2>
+        <form id="modal-form">
+          <label id="modal-label">Valor <input id="modal-input" required></label>
+          <div class="modal-actions"><button type="button" id="modal-cancel">Cancelar</button><button type="submit" id="modal-submit">Confirmar</button></div>
+        </form>
+      </div>
+    </div>
   </main>
   <script src="app.js"></script>
 </body>

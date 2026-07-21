@@ -13,7 +13,7 @@ local function loadDict(dict)
 end
 
 local function playVariant()
-    if not seated or usingComputer then return end
+    if not seated or usingComputer or exiting then return end
 
     local computer = computers[activeComputer]
     local clip = variants[variantIndex]
@@ -21,14 +21,27 @@ local function playVariant()
     Chairs.play(computer, PlayerPedId(), clip, clip .. '_chair', true)
 end
 
-local function useComputer()
+local function startComputer()
     if not seated or usingComputer or exiting then return end
 
     local computer = computers[activeComputer]
+    local index = activeComputer
     local entry = computer.entry
     usingComputer = true
     Chairs.stop()
     Chairs.play(computer, PlayerPedId(), entry.computerIdleClip, entry.computerIdleChairClip, true)
+    CreateThread(function()
+        Wait(2000)
+        if usingComputer and activeComputer == index then
+            SendNUIMessage({ action = 'openLogin', label = computer.label, login = computer.login or {} })
+            SetNuiFocus(true, true)
+        end
+    end)
+end
+
+local function useComputer()
+    if not seated or usingComputer or exiting then return end
+    TriggerServerEvent('fixlife_facciones:server:useComputer', activeComputer)
 end
 
 local function drawText(coords, text)
@@ -43,6 +56,8 @@ local function drawText(coords, text)
 end
 
 local function leaveChair()
+    SendNUIMessage({ action = 'close' })
+    SetNuiFocus(false, false)
     Chairs.stop()
     if activeComputer then
         SetEntityCollision(computers[activeComputer].chairObject, true, true)
@@ -58,6 +73,8 @@ end
 
 local function clearComputer(index)
     if activeComputer == index then
+        SendNUIMessage({ action = 'close' })
+        SetNuiFocus(false, false)
         Chairs.stop()
         ClearPedTasks(PlayerPedId())
         activeComputer = nil
@@ -80,17 +97,24 @@ local function clearComputer(index)
 end
 
 local function exitComputer()
-    if not usingComputer then return end
+    if not usingComputer or exiting then return end
 
     local computer = computers[activeComputer]
+    local index = activeComputer
     local entry = computer.entry
+    exiting = true
     usingComputer = false
+    SendNUIMessage({ action = 'close' })
+    SetNuiFocus(false, false)
     Chairs.stop()
     local duration = Chairs.play(computer, PlayerPedId(), entry.computerExitClip, entry.computerExitChairClip)
 
     CreateThread(function()
         Wait(duration)
-        playVariant()
+        if seated and activeComputer == index then
+            exiting = false
+            playVariant()
+        end
     end)
 end
 
@@ -117,6 +141,47 @@ local function exitChair()
         exiting = false
     end)
 end
+
+RegisterNUICallback('close', function(_, callback)
+    exitComputer()
+    callback({ ok = true })
+end)
+
+RegisterNUICallback('members', function(_, callback)
+    callback(lib.callback.await('fixlife_facciones:server:members', false, activeComputer))
+end)
+
+RegisterNUICallback('vehicles', function(_, callback)
+    callback(lib.callback.await('fixlife_facciones:server:vehicles', false, activeComputer))
+end)
+
+RegisterNUICallback('vehicleOwner', function(data, callback)
+    callback({ ok = lib.callback.await('fixlife_facciones:server:vehicleOwner', false, activeComputer, data.plate, data.citizenid) })
+end)
+
+RegisterNUICallback('vehicleModel', function(data, callback)
+    callback({ ok = lib.callback.await('fixlife_facciones:server:vehicleModel', false, activeComputer, data.plate, data.model) })
+end)
+
+RegisterNUICallback('vehicleState', function(data, callback)
+    callback({ ok = lib.callback.await('fixlife_facciones:server:vehicleState', false, activeComputer, data.plate, data.state) })
+end)
+
+RegisterNUICallback('dashboard', function(_, callback)
+    callback(lib.callback.await('fixlife_facciones:server:dashboard', false, activeComputer))
+end)
+
+RegisterNUICallback('finance', function(_, callback)
+    callback(lib.callback.await('fixlife_facciones:server:finance', false, activeComputer))
+end)
+
+RegisterNUICallback('financeDeposit', function(data, callback)
+    callback({ ok = lib.callback.await('fixlife_facciones:server:financeDeposit', false, activeComputer, data.amount) })
+end)
+
+RegisterNUICallback('memberAction', function(data, callback)
+    callback({ ok = lib.callback.await('fixlife_facciones:server:memberAction', false, activeComputer, data.action, data.target, data.value) })
+end)
 
 local function sitInChair(index)
     local computer = computers[index]
@@ -196,6 +261,10 @@ RegisterNetEvent('fixlife_facciones:client:start', function(index)
     sitInChair(index)
 end)
 
+RegisterNetEvent('fixlife_facciones:client:useComputer', function(index)
+    if activeComputer == index then startComputer() end
+end)
+
 RegisterNetEvent('fixlife_facciones:client:denied', function()
     activeComputer = nil
     entering = false
@@ -208,7 +277,7 @@ CreateThread(function()
 
             if IsDisabledControlJustReleased(0, 73) then
                 if usingComputer then exitComputer() else exitChair() end
-            elseif not usingComputer then
+            elseif not usingComputer and not exiting then
                 local computer = computers[activeComputer]
                 local monitor = NetToObj(computer.monitorNetId)
                 if monitor ~= 0 then

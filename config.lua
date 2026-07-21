@@ -32,6 +32,14 @@ Config.Computers = {
             computerIdleChairClip = 'computer_idle_chair',
             computerExitClip = 'computer_exit',
             computerExitChairClip = 'computer_exit_chair'
+        },
+        login = {
+            logo = 'logos/lspd.webp',
+            username = 'Sixenom',
+            password = '12345678'
+        },
+        access = {
+            police = 4
         }
     }
 }

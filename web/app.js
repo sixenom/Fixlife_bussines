@@ -1,17 +1,220 @@
 const panel = document.querySelector('#panel');
+const loginScreen = document.querySelector('#login-screen');
+const adminScreen = document.querySelector('#admin-screen');
+const dashboard = document.querySelector('.dashboard');
+const membersScreen = document.querySelector('#members-screen');
+const vehiclesScreen = document.querySelector('#vehicles-screen');
+const financeScreen = document.querySelector('#finance-screen');
+const memberList = document.querySelector('#member-list');
+const vehicleList = document.querySelector('#vehicle-list');
+const memberCount = document.querySelector('#member-count');
+const fleetCount = document.querySelector('#fleet-count');
+const memberSearch = document.querySelector('#member-search');
+const vehicleSearch = document.querySelector('#vehicle-search');
+const financeBalance = document.querySelector('#finance-balance');
+const financeProvider = document.querySelector('#finance-provider');
+const financeStatus = document.querySelector('#finance-status');
+const financeTransactions = document.querySelector('#finance-transactions');
+const statMembers = document.querySelector('#stat-members');
+const statBalance = document.querySelector('#stat-balance');
+const statService = document.querySelector('.icon.green').parentElement.querySelector('strong');
 const title = document.querySelector('#title');
+const logo = document.querySelector('#logo');
+const username = document.querySelector('#username');
+const password = document.querySelector('#password');
+const modal = document.querySelector('#modal');
+const modalTitle = document.querySelector('#modal-title');
+const modalLabel = document.querySelector('#modal-label');
+const modalInput = document.querySelector('#modal-input');
+const modalForm = document.querySelector('#modal-form');
+let typing;
+let memberData = { members: [], grades: [] };
+let vehicles = [];
+let modalAction;
+let modalTarget;
+
+const nui = (name, body = {}) => fetch(`https://${GetParentResourceName()}/${name}`, { method: 'POST', body: JSON.stringify(body) }).then(r => r.json());
 
 function close() {
+  clearInterval(typing);
+  modal.hidden = true;
   panel.hidden = true;
   fetch(`https://${GetParentResourceName()}/close`, { method: 'POST', body: '{}' });
 }
 
-window.addEventListener('message', ({ data }) => {
-  if (data.action === 'open') {
-    title.textContent = data.label;
-    panel.hidden = false;
+function openModal(action, target) {
+  modalAction = action;
+  modalTarget = target;
+  modalTitle.textContent = action === 'hire' ? 'Contratar miembro' : action === 'grade' ? 'Cambiar rango' : action === 'bonus' ? 'Dar bono' : action === 'financeDeposit' ? 'Recargar cuenta de sociedad' : action === 'vehicleOwner' ? 'Cambiar propietario' : action === 'vehicleModel' ? 'Cambiar modelo' : action === 'vehicleState' ? 'Cambiar estado' : 'Despedir miembro';
+  modalLabel.hidden = action === 'fire';
+  modalInput.required = action !== 'fire';
+  modalInput.type = action === 'bonus' || action === 'hire' || action === 'financeDeposit' ? 'number' : 'text';
+  if (action === 'grade') {
+    const current = memberData.members.find(member => member.id === target)?.grade;
+    modalLabel.innerHTML = 'Nuevo rango <select id="modal-input" required>' + memberData.grades.map(grade => `<option value="${grade.level}" ${grade.level === current ? 'selected' : ''}>${grade.level} · ${grade.name}</option>`).join('') + '</select>';
+    modalInput.replaceWith(modalLabel.querySelector('#modal-input'));
+  } else if (action === 'vehicleOwner') {
+    modalLabel.innerHTML = 'Nuevo propietario <select id="modal-input" required>' + memberData.members.map(member => `<option value="${member.id}">${member.name} · ${member.gradeName}</option>`).join('') + '</select>';
+  } else if (action === 'vehicleModel') {
+    modalLabel.innerHTML = 'Nombre del modelo <input id="modal-input" required placeholder="Ej: police3">';
+  } else if (action === 'vehicleState') {
+    modalLabel.innerHTML = 'Estado <select id="modal-input" required><option value="1">En garaje</option><option value="0">Fuera de garaje</option></select>';
+  } else {
+    modalLabel.innerHTML = action === 'hire' ? 'ID del jugador <input id="modal-input" type="number" required>' : action === 'bonus' ? 'Valor del bono <input id="modal-input" type="number" min="1" required>' : action === 'financeDeposit' ? 'Monto desde tu banco <input id="modal-input" type="number" min="1" required>' : '¿Confirmas despedir a este miembro? <input id="modal-input" type="hidden" value="confirm">';
   }
+  modal.hidden = false;
+  if (action !== 'fire') document.querySelector('#modal-input').focus();
+}
+
+function closeModal() { modal.hidden = true; }
+
+async function loadDashboard() {
+  const data = await nui('dashboard');
+  if (!data.ok) return;
+  statMembers.textContent = data.members;
+  statBalance.textContent = `$ ${Number(data.balance).toLocaleString('es-CO')}`;
+  statService.textContent = `${data.vehicles} vehículos`;
+}
+
+window.addEventListener('message', ({ data }) => {
+  if (data.action !== 'openLogin') return;
+  const login = data.login || {};
+  title.textContent = data.label || 'Panel administrativo';
+  username.value = '';
+  password.value = '';
+  if (login.logo) logo.innerHTML = `<img src="${login.logo}" alt="Logo">`;
+  panel.hidden = false;
+  loginScreen.hidden = false;
+  adminScreen.hidden = true;
+  dashboard.hidden = false;
+  membersScreen.hidden = true;
+  vehiclesScreen.hidden = true;
+  financeScreen.hidden = true;
+  document.querySelectorAll('[data-view]').forEach(item => item.classList.toggle('active', item.dataset.view === 'dashboard'));
+  let index = 0;
+  const user = String(login.username || '');
+  const pass = String(login.password || '');
+  typing = setInterval(() => {
+    if (index <= user.length) username.value = user.slice(0, index);
+    else password.value = pass.slice(0, index - user.length);
+    if (index++ > user.length + pass.length) clearInterval(typing);
+  }, 70);
 });
 
+function renderMembers() {
+  const query = memberSearch.value.toLowerCase();
+  const members = memberData.members.filter(member => member.name.toLowerCase().includes(query));
+  memberCount.textContent = `${members.length} miembro${members.length === 1 ? '' : 's'} registrado${members.length === 1 ? '' : 's'}`;
+  memberList.innerHTML = members.map(member => `<article class="member-row" data-id="${member.id}">
+    <span class="member-avatar">${member.name.charAt(0)}</span><div class="member-info"><strong>${member.name}</strong><small>${member.gradeName} · ${member.online ? 'En servicio' : 'Fuera de servicio'}</small></div>
+    <span class="online-dot ${member.online ? 'on' : ''}"></span><button class="member-action" data-action="memberVehicles">Vehículos</button><button class="member-action" data-action="grade">Rango</button><button class="member-action" data-action="bonus">Bono</button><button class="member-action danger" data-action="fire">Despedir</button>
+  </article>`).join('') || '<p class="empty members-empty">No hay miembros para mostrar.</p>';
+}
+
+async function loadFinance() {
+  const data = await nui('finance');
+  financeBalance.textContent = data.ok ? `$ ${Number(data.balance).toLocaleString('es-CO')}` : '$ —';
+  financeProvider.textContent = data.provider;
+  financeStatus.textContent = data.ok ? 'Conectada' : 'No disponible';
+  financeStatus.className = data.ok ? 'connected' : 'disconnected';
+  financeTransactions.innerHTML = data.transactions?.map(transaction => `<div class="transaction"><span class="transaction-icon ${transaction.type === 'deposit' ? 'positive' : 'negative'}">${transaction.type === 'deposit' ? '+' : '−'}</span><div><strong>${transaction.description || 'Movimiento'}</strong><small>${transaction.date || ''}</small></div><b class="${transaction.type === 'deposit' ? 'positive' : 'negative'}">${transaction.type === 'deposit' ? '+' : '-'} $ ${Number(transaction.amount).toLocaleString('es-CO')}</b></div>`).join('') || '<p class="empty">No hay movimientos registrados todavía.</p>';
+}
+
+function renderVehicles() {
+  const query = vehicleSearch.value.toLowerCase();
+  const filtered = vehicles.filter(vehicle => `${vehicle.plate} ${vehicle.owner} ${vehicle.model}`.toLowerCase().includes(query));
+  fleetCount.textContent = `${filtered.length} vehículo${filtered.length === 1 ? '' : 's'}`;
+  vehicleList.innerHTML = filtered.map(vehicle => `<article class="vehicle-row" data-plate="${vehicle.plate}"><span class="vehicle-icon">▣</span><div class="member-info"><strong>${vehicle.plate}</strong><small>Modelo: ${vehicle.model} · ${vehicle.type}</small></div><div class="vehicle-owner"><small>PROPIETARIO</small><strong>${vehicle.owner}</strong><em class="vehicle-status">${vehicle.status}</em></div><button class="member-action" data-action="vehicleModel">Modelo</button><button class="member-action" data-action="vehicleState">Estado</button><button class="member-action" data-action="vehicleOwner">Dueño</button></article>`).join('') || '<p class="empty members-empty">No hay vehículos asignados a este trabajo.</p>';
+}
+
+async function loadVehicles() {
+  fleetCount.textContent = 'Cargando flota...';
+  vehicles = await nui('vehicles');
+  renderVehicles();
+}
+
+async function loadMembers() {
+  memberCount.textContent = 'Cargando personal...';
+  memberData = await nui('members');
+  renderMembers();
+}
+
+async function showMemberVehicles(member) {
+  if (!member) return;
+  document.querySelectorAll('[data-view]').forEach(item => item.classList.toggle('active', item.dataset.view === 'vehicles'));
+  dashboard.hidden = true;
+  membersScreen.hidden = true;
+  vehiclesScreen.hidden = false;
+  financeScreen.hidden = true;
+  await loadVehicles();
+  vehicleSearch.value = member.name;
+  renderVehicles();
+}
+
+document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('[data-view]').forEach(item => item.classList.remove('active'));
+  button.classList.add('active');
+  const members = button.dataset.view === 'members';
+  const vehicleView = button.dataset.view === 'vehicles';
+  const financeView = button.dataset.view === 'finance';
+  dashboard.hidden = members || vehicleView || financeView;
+  membersScreen.hidden = !members || vehicleView;
+  vehiclesScreen.hidden = !vehicleView;
+  financeScreen.hidden = !financeView;
+  if (members) loadMembers();
+  if (vehicleView) loadVehicles();
+  if (financeView) loadFinance();
+  if (button.dataset.view === 'dashboard') loadDashboard();
+}));
+
+memberSearch.addEventListener('input', renderMembers);
+vehicleSearch.addEventListener('input', renderVehicles);
+vehicleList.addEventListener('click', async event => {
+  const button = event.target.closest('[data-action]');
+  if (!button) return;
+  if (button.dataset.action === 'vehicleOwner' && !memberData.members.length) await loadMembers();
+  openModal(button.dataset.action, button.closest('.vehicle-row').dataset.plate);
+});
+document.querySelector('#hire').addEventListener('click', async () => {
+  openModal('hire');
+});
+
+document.querySelector('#finance-deposit').addEventListener('click', () => openModal('financeDeposit'));
+
+memberList.addEventListener('click', async event => {
+  const button = event.target.closest('[data-action]');
+  if (!button) return;
+  const target = button.closest('.member-row').dataset.id;
+  if (button.dataset.action === 'memberVehicles') {
+    showMemberVehicles(memberData.members.find(member => member.id === target));
+    return;
+  }
+  openModal(button.dataset.action, target);
+});
+
+modalForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const value = document.querySelector('#modal-input').value;
+  const result = modalAction === 'financeDeposit'
+    ? await nui('financeDeposit', { amount: value })
+    : modalAction === 'vehicleOwner'
+      ? await nui('vehicleOwner', { plate: modalTarget, citizenid: value })
+    : modalAction === 'vehicleModel'
+      ? await nui('vehicleModel', { plate: modalTarget, model: value })
+    : modalAction === 'vehicleState'
+      ? await nui('vehicleState', { plate: modalTarget, state: value })
+    : await nui('memberAction', { action: modalAction, target: modalTarget, value });
+  if (result.ok) { closeModal(); ['vehicleOwner', 'vehicleModel', 'vehicleState'].includes(modalAction) ? loadVehicles() : modalAction === 'financeDeposit' ? loadFinance() : loadMembers(); }
+});
+document.querySelector('#modal-close').addEventListener('click', closeModal);
+document.querySelector('#modal-cancel').addEventListener('click', closeModal);
+
 document.querySelector('#close').addEventListener('click', close);
-document.addEventListener('keyup', ({ key }) => { if (key === 'Escape') close(); });
+document.querySelector('#login-form').addEventListener('submit', event => {
+  event.preventDefault();
+  clearInterval(typing);
+  loginScreen.hidden = true;
+  adminScreen.hidden = false;
+  loadDashboard();
+});
+document.addEventListener('keyup', ({ key }) => { if (key === 'Escape') modal.hidden ? close() : closeModal(); });
