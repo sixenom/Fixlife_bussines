@@ -287,6 +287,20 @@ end
 RegisterNetEvent('fixlife_facciones:client:managementPointUpdated', function(index, point)
     local computer = computers[index]
     if not computer or type(point) ~= 'table' then return end
+
+    for _, objectData in ipairs({
+        {netId = computer.monitorNetId, coords = point, heading = point.heading},
+        {netId = computer.chairNetId, coords = point.chair, heading = point.chair.heading}
+    }) do
+        local entity = objectData.netId and NetToObj(objectData.netId)
+        if entity and entity ~= 0 then
+            NetworkRequestControlOfEntity(entity)
+            SetEntityCoordsNoOffset(entity, objectData.coords.x, objectData.coords.y, objectData.coords.z, false, false, false)
+            SetEntityHeading(entity, objectData.heading)
+            FreezeEntityPosition(entity, true)
+        end
+    end
+
     computer.coords = vec3(point.x, point.y, point.z)
     computer.heading = point.heading
     computer.chair.coords = vec3(point.chair.x, point.chair.y, point.chair.z)

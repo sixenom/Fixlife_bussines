@@ -12,10 +12,6 @@ local function applyManagementPoint(computer, point)
     computer.heading = heading
     computer.chair.coords = vec3(chairX, chairY, point.z - 0.2)
     computer.chair.heading = heading + 140.0
-    computer.zone.points = {
-        vec3(point.x - 2.5, point.y - 2.5, point.z), vec3(point.x + 2.5, point.y - 2.5, point.z),
-        vec3(point.x + 2.5, point.y + 2.5, point.z), vec3(point.x - 2.5, point.y + 2.5, point.z)
-    }
 end
 
 for organization, point in pairs(savedPoints) do
@@ -42,6 +38,30 @@ local function hasFeature(index, feature)
     if feature == 'settings' then return getOrganization(index) ~= nil end
     local organization = getOrganization(index)
     return organization and organization.features and organization.features[feature] == true
+end
+
+local function isInsideZone(index, x, y, z)
+    local computer = getComputer(index)
+    local zone = computer and computer.zone
+    local points = zone and zone.points or {}
+    if #points < 3 then return false end
+
+    local inside = false
+    local j = #points
+    for i = 1, #points do
+        local a, b = points[i], points[j]
+        if ((a.y > y) ~= (b.y > y)) and x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x then
+            inside = not inside
+        end
+        j = i
+    end
+
+    local minZ, maxZ = points[1].z, points[1].z
+    for i = 2, #points do
+        minZ, maxZ = math.min(minZ, points[i].z), math.max(maxZ, points[i].z)
+    end
+    local halfThickness = (tonumber(zone.thickness) or 0) / 2
+    return inside and z >= minZ - halfThickness and z <= maxZ + halfThickness
 end
 
 local function hasAccess(src, index)
@@ -239,6 +259,13 @@ lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(s
     local x, y, z = tonumber(point.x), tonumber(point.y), tonumber(point.z)
     local heading = tonumber(point.heading) or 0
     if not x or not y or not z or math.abs(x) > 10000 or math.abs(y) > 10000 or z < -100 or z > 2000 then return false end
+    if not isInsideZone(index, x, y, z) then
+        TriggerClientEvent('ox_lib:notify', src, {
+            type = 'error',
+            description = 'La laptop debe colocarse dentro de la zona del negocio.'
+        })
+        return false
+    end
 
     local computer = getComputer(index)
     local organization = computer.organization
@@ -249,20 +276,6 @@ lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(s
         chair = { x = computer.chair.coords.x, y = computer.chair.coords.y, z = computer.chair.coords.z, heading = computer.chair.heading },
         zone = computer.zone.points
     }
-    local spawned = objects[index]
-    if spawned then
-        local monitor = NetworkGetEntityFromNetworkId(spawned.monitor)
-        local chair = NetworkGetEntityFromNetworkId(spawned.chair)
-        if monitor ~= 0 then
-            SetEntityCoordsNoOffset(monitor, computer.coords.x, computer.coords.y, computer.coords.z, false, false, false)
-            SetEntityHeading(monitor, computer.heading)
-        end
-        if chair ~= 0 then
-            SetEntityCoordsNoOffset(chair, computer.chair.coords.x, computer.chair.coords.y, computer.chair.coords.z, false, false, false)
-            SetEntityHeading(chair, computer.chair.heading)
-            FreezeEntityPosition(chair, true)
-        end
-    end
     SaveResourceFile(GetCurrentResourceName(), 'data/points.json', json.encode(savedPoints), -1)
     TriggerClientEvent('fixlife_facciones:client:managementPointUpdated', -1, index, point)
     return true
