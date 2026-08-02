@@ -2,21 +2,9 @@ Config = {}
 
 Config.Organizations = {
     police = {
+        label = 'Terminal de gestion',
         job = 'police',
-        features = { settings = true, members = true, vehicles = true, finance = true }
-    },s
-    -- gym = { job = 'gym', features = { members = true, memberships = true, machines = true } }
-}
-
--- Cambia estas coordenadas por la oficina de cada faccion o negocio.
-Config.Computers = {
-    {
-        label = 'Terminal de gestión',
-        organization = 'police',
-        model = 'm25_1_prop_m51_laptop_02a',
-        chair = {
-            model = 'vw_prop_vw_offchair_01'
-        },
+        features = { settings = true, members = true, vehicles = true, finance = true },
         zone = {
             name = 'PUNTO COMISARIA',
             points = {
@@ -27,6 +15,18 @@ Config.Computers = {
             },
             thickness = 4.0,
         },
+        login = {
+            logo = 'logos/lspd.webp',
+            username = 'Sixenom',
+            password = '12345678'
+        }
+    }
+}
+
+Config.ManagementTypes = {
+    laptop = {
+        model = 'm25_1_prop_m51_laptop_02a',
+        chair = { model = 'vw_prop_vw_offchair_01' },
         entry = {
             dict = 'anim@scripted@player@fix_agy_ig6_office_chair_entry@male@',
             pedClip = 'enter',
@@ -37,11 +37,9 @@ Config.Computers = {
             computerIdleChairClip = 'computer_idle_chair',
             computerExitClip = 'computer_exit',
             computerExitChairClip = 'computer_exit_chair'
-        },
-        login = {
-            logo = 'logos/lspd.webp',
-            username = 'Sixenom',
-            password = '12345678'
-        },
+        }
+    },
+    tablet = {
+        model = 'm25_2_prop_m52_aitablet_03a'
     }
 }

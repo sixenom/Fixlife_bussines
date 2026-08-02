@@ -10,6 +10,15 @@ local managementPreview
 local zones = {}
 local addTargets
 
+local function applyManagementType(computer, pointType)
+    local typeConfig = Config.ManagementTypes[pointType]
+    computer.type = pointType
+    computer.model = typeConfig and typeConfig.model
+    computer.entry = typeConfig and typeConfig.entry
+    computer.chair = computer.chair or {}
+    if typeConfig and typeConfig.chair then computer.chair.model = typeConfig.chair.model end
+end
+
 local function deleteManagementPreview()
     if managementPreview and DoesEntityExist(managementPreview) then DeleteEntity(managementPreview) end
     managementPreview = nil
@@ -66,7 +75,7 @@ local function placeManagementPoint(index, pointType)
 
     if pointType == 'object' then return selectManagementObject(index) end
 
-    local model = pointType == 'tablet' and 'm25_2_prop_m52_aitablet_03a' or computer.model
+    local model = Config.ManagementTypes[pointType].model
     local hash = joaat(model)
     lib.requestModel(hash)
     local heading = GetEntityHeading(PlayerPedId())
@@ -394,7 +403,7 @@ RegisterNetEvent('fixlife_facciones:client:managementPointUpdated', function(ind
 
     computer.coords = vec3(point.x, point.y, point.z)
     computer.heading = point.heading
-    computer.type = nextType
+    applyManagementType(computer, nextType)
     computer.objectModel = point.model
     if point.chair then
         computer.chair.coords = vec3(point.chair.x, point.chair.y, point.chair.z)
@@ -493,7 +502,7 @@ RegisterNetEvent('fixlife_facciones:client:objects', function(networkObjects)
             if ids.point then
                 computers[index].coords = vec3(ids.point.x, ids.point.y, ids.point.z)
                 computers[index].heading = ids.point.heading
-                computers[index].type = ids.point.type or 'laptop'
+                applyManagementType(computers[index], ids.point.type or 'laptop')
                 computers[index].objectModel = ids.point.model
                 if ids.point.chair then
                     computers[index].chair.coords = vec3(ids.point.chair.x, ids.point.chair.y, ids.point.chair.z)
@@ -559,11 +568,11 @@ CreateThread(function()
 end)
 
 CreateThread(function()
-    for i, computer in ipairs(Config.Computers) do
-        computers[i] = computer
+    for organization, computer in pairs(Config.Organizations) do
+        computers[organization] = computer
         local zone = computer.zone
         if zone then
-            local index = i
+            local index = organization
             createManagementZone(index)
         end
     end

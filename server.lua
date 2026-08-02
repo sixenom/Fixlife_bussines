@@ -6,6 +6,13 @@ local function applyManagementPoint(computer, point)
     local heading = point.heading or 0.0
     computer.type = point.type == 'tablet' and 'tablet' or point.type == 'object' and 'object' or 'laptop'
     computer.objectModel = tonumber(point.model)
+    local typeConfig = Config.ManagementTypes[computer.type]
+    if typeConfig then
+        computer.model = typeConfig.model
+        computer.entry = typeConfig.entry
+        computer.chair = computer.chair or {}
+        computer.chair.model = typeConfig.chair and typeConfig.chair.model
+    end
     local angle = math.rad(heading)
     local offsetX, offsetY = -0.1908, -1.05
     local chairX = point.x + offsetX * math.cos(angle) - offsetY * math.sin(angle)
@@ -20,7 +27,7 @@ local function applyManagementPoint(computer, point)
 end
 
 local function getManagementPoint(index)
-    local computer = Config.Computers[index]
+    local computer = Config.Organizations[index]
     local point = { x = computer.coords.x, y = computer.coords.y, z = computer.coords.z, heading = computer.heading, type = computer.type, model = computer.objectModel }
     if computer.type == 'laptop' then
         point.chair = { x = computer.chair.coords.x, y = computer.chair.coords.y, z = computer.chair.coords.z, heading = computer.chair.heading }
@@ -31,21 +38,16 @@ end
 for organization, point in pairs(savedPoints) do
     local pointConfig = Config.Organizations[organization]
     if pointConfig then
-        for index, computer in ipairs(Config.Computers) do
-            if computer.organization == organization then
-                applyManagementPoint(computer, point)
-            end
-        end
+        applyManagementPoint(pointConfig, point)
     end
 end
 
 local function getComputer(index)
-    return type(index) == 'number' and Config.Computers[index]
+    return type(index) == 'string' and Config.Organizations[index]
 end
 
 local function getOrganization(index)
-    local computer = getComputer(index)
-    return computer and Config.Organizations[computer.organization]
+    return getComputer(index)
 end
 
 local function hasFeature(index, feature)
@@ -283,7 +285,7 @@ lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(s
     end
 
     local computer = getComputer(index)
-    local organization = computer.organization
+    local organization = index
     local previousType = computer.type or 'laptop'
     if pointType == 'object' and not tonumber(point.model) then return false end
     savedPoints[organization] = { x = x, y = y, z = z, heading = heading, type = pointType, model = tonumber(point.model) }
@@ -311,7 +313,7 @@ local function releaseComputer(index)
     end
     local entity = NetworkGetEntityFromNetworkId(objects[index].chair)
     if entity ~= 0 then
-        SetEntityHeading(entity, Config.Computers[index].chair.heading)
+        SetEntityHeading(entity, Config.Organizations[index].chair.heading)
         FreezeEntityPosition(entity, true)
     end
     occupied[index] = nil
@@ -338,8 +340,8 @@ end
 
 spawnComputer = function(index)
     if objects[index] then return objects[index] end
-    local computer = Config.Computers[index]
-    local model = computer.type == 'tablet' and 'm25_2_prop_m52_aitablet_03a' or computer.model
+    local computer = Config.Organizations[index]
+    local model = computer.model
     local monitor
     if computer.type ~= 'object' then
         monitor = CreateObjectNoOffset(joaat(model), computer.coords.x, computer.coords.y, computer.coords.z, true, true, false)
@@ -406,12 +408,12 @@ RegisterNetEvent('fixlife_facciones:server:release', function(index)
 end)
 
 AddEventHandler('playerDropped', function()
-    for index in pairs(Config.Computers) do
+    for index in pairs(Config.Organizations) do
         leaveZone(source, index)
     end
 end)
 
 AddEventHandler('onResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end
-    for index = 1, #Config.Computers do deleteComputer(index) end
+    for index in pairs(Config.Organizations) do deleteComputer(index) end
 end)
