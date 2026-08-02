@@ -5,6 +5,14 @@ const dashboard = document.querySelector('.dashboard');
 const membersScreen = document.querySelector('#members-screen');
 const vehiclesScreen = document.querySelector('#vehicles-screen');
 const financeScreen = document.querySelector('#finance-screen');
+const settingsButton = document.querySelector('aside nav button:last-child');
+settingsButton.dataset.view = 'settings';
+settingsButton.dataset.feature = 'settings';
+const settingsScreen = document.createElement('div');
+settingsScreen.id = 'settings-screen';
+settingsScreen.hidden = true;
+settingsScreen.innerHTML = '<header><div><span class="status"></span><span>Configuración de la organización</span><h1>Puntos de gestión</h1></div></header><section class="card settings-card"><div class="card-title"><h3>Punto de gestión del trabajo</h3><span>SOLO JEFE</span></div><p class="empty">Colócate en la ubicación deseada y guárdala como el nuevo punto del computador de gestión.</p><button class="hire" id="save-management-point">Usar mi ubicación actual</button><p id="settings-status" class="empty"></p></section>';
+document.querySelector('#admin-screen').append(settingsScreen);
 const memberList = document.querySelector('#member-list');
 const vehicleList = document.querySelector('#vehicle-list');
 const memberCount = document.querySelector('#member-count');
@@ -32,6 +40,7 @@ let memberData = { members: [], grades: [] };
 let vehicles = [];
 let modalAction;
 let modalTarget;
+let features = {};
 
 const nui = (name, body = {}) => fetch(`https://${GetParentResourceName()}/${name}`, { method: 'POST', body: JSON.stringify(body) }).then(r => r.json());
 
@@ -77,7 +86,24 @@ async function loadDashboard() {
 }
 
 window.addEventListener('message', ({ data }) => {
+  if (data.action === 'hidePanel') {
+    modal.hidden = true;
+    panel.hidden = true;
+    return;
+  }
   if (data.action !== 'openLogin') return;
+  features = data.features || {};
+  document.querySelectorAll('[data-view]').forEach(item => {
+    const feature = item.dataset.view;
+    item.hidden = feature !== 'dashboard' && features[feature] !== true;
+  });
+  document.querySelectorAll('.action').forEach((item, index) => {
+    item.hidden = ![features.members, features.finance, features.vehicles][index];
+  });
+  document.querySelectorAll('.stats article').forEach((item, index) => {
+    item.hidden = ![features.members, features.finance, true][index];
+  });
+  document.querySelectorAll('.lower .card').forEach(item => { item.hidden = false; });
   const login = data.login || {};
   title.textContent = data.label || 'Panel administrativo';
   username.value = '';
@@ -90,6 +116,7 @@ window.addEventListener('message', ({ data }) => {
   membersScreen.hidden = true;
   vehiclesScreen.hidden = true;
   financeScreen.hidden = true;
+  settingsScreen.hidden = true;
   adminScreen.classList.remove('internal-view');
   document.querySelectorAll('[data-view]').forEach(item => item.classList.toggle('active', item.dataset.view === 'dashboard'));
   let index = 0;
@@ -159,14 +186,17 @@ document.querySelectorAll('[data-view]').forEach(button => button.addEventListen
   const members = button.dataset.view === 'members';
   const vehicleView = button.dataset.view === 'vehicles';
   const financeView = button.dataset.view === 'finance';
-  adminScreen.classList.toggle('internal-view', members || vehicleView || financeView);
-  dashboard.hidden = members || vehicleView || financeView;
+  const settingsView = button.dataset.view === 'settings';
+  adminScreen.classList.toggle('internal-view', members || vehicleView || financeView || settingsView);
+  dashboard.hidden = members || vehicleView || financeView || settingsView;
   membersScreen.hidden = !members || vehicleView;
   vehiclesScreen.hidden = !vehicleView;
   financeScreen.hidden = !financeView;
+  settingsScreen.hidden = !settingsView;
   if (members) loadMembers();
   if (vehicleView) loadVehicles();
   if (financeView) loadFinance();
+  if (settingsView) document.querySelector('#settings-status').textContent = '';
   if (button.dataset.view === 'dashboard') loadDashboard();
 }));
 
@@ -183,6 +213,10 @@ document.querySelector('#hire').addEventListener('click', async () => {
 });
 
 document.querySelector('#finance-deposit').addEventListener('click', () => openModal('financeDeposit'));
+document.querySelector('#save-management-point').addEventListener('click', async () => {
+  const result = await nui('saveManagementPoint');
+  document.querySelector('#settings-status').textContent = result.ok ? 'Punto guardado. Reinicia el recurso para mover el computador.' : 'Colocación cancelada o no autorizada.';
+});
 
 memberList.addEventListener('click', async event => {
   const button = event.target.closest('[data-action]');
@@ -223,12 +257,12 @@ document.querySelector('#login-form').addEventListener('submit', event => {
 document.addEventListener('keyup', ({ key }) => { if (key === 'Escape') modal.hidden ? close() : closeModal(); });
 
 const openView = view => document.querySelector(`#admin-screen nav [data-view="${view}"]`)?.click();
-document.querySelectorAll('.action')[0]?.addEventListener('click', () => openView('members'));
-document.querySelectorAll('.action')[1]?.addEventListener('click', () => openView('finance'));
+document.querySelectorAll('.action')[0]?.addEventListener('click', () => features.members && openView('members'));
+document.querySelectorAll('.action')[1]?.addEventListener('click', () => features.finance && openView('finance'));
 const vehicleAction = document.createElement('button');
 vehicleAction.className = 'action';
 vehicleAction.innerHTML = '<b><i class="fa-solid fa-car"></i></b><div><strong>Gestionar vehículos</strong><small>Flota asignada al trabajo</small></div><i class="fa-solid fa-chevron-right"></i>';
-vehicleAction.addEventListener('click', () => openView('vehicles'));
+vehicleAction.addEventListener('click', () => features.vehicles && openView('vehicles'));
 document.querySelector('.lower .card')?.append(vehicleAction);
 
 const quickViews = [

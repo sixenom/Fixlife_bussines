@@ -1,9 +1,18 @@
 Config = {}
 
+Config.Organizations = {
+    police = {
+        job = 'police',
+        features = { settings = true, members = true, vehicles = true, finance = true }
+    },
+    -- gym = { job = 'gym', features = { members = true, memberships = true, machines = true } }
+}
+
 -- Cambia estas coordenadas por la oficina de cada faccion o negocio.
 Config.Computers = {
     {
         label = 'Terminal de gestión',
+        organization = 'police',
         coords = vec3(455.2048, -930.862732, 34.0772438),
         heading = 0.0,
         model = 'm25_1_prop_m51_laptop_02a',

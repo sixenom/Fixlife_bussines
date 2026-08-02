@@ -6,6 +6,77 @@ local entering = false
 local exiting = false
 local variantIndex = 1
 local variants = { 'base', 'idle_a', 'idle_b', 'idle_c', 'idle_d', 'idle_e' }
+local managementPreview
+
+local function deleteManagementPreview()
+    if managementPreview and DoesEntityExist(managementPreview) then DeleteEntity(managementPreview) end
+    managementPreview = nil
+end
+
+local function placeManagementPoint(index)
+    local computer = computers[index]
+    if not computer then return end
+
+    local hash = joaat(computer.model)
+    lib.requestModel(hash)
+    local heading = GetEntityHeading(PlayerPedId())
+    local hit, coords
+    managementPreview = true
+
+    CreateThread(function()
+        while managementPreview do
+            hit, _, coords = lib.raycast.fromCamera(511, 4, 30.0)
+            Wait(1)
+        end
+    end)
+
+    lib.showTextUI('[Rueda] Rotar  |  [Enter] Colocar  |  [Backspace] Cancelar')
+    while managementPreview do
+        Wait(0)
+        SetPauseMenuActive(false)
+        DisableControlAction(0, 14, true)
+        DisableControlAction(0, 15, true)
+
+        if hit and coords then
+            if type(managementPreview) == 'boolean' then
+                managementPreview = CreateObjectNoOffset(hash, coords.x, coords.y, coords.z, false, false, false)
+                SetEntityAlpha(managementPreview, 150, false)
+                FreezeEntityPosition(managementPreview, true)
+                SetEntityCollision(managementPreview, false, true)
+                SetEntityDrawOutline(managementPreview, true)
+            else
+                SetEntityCoordsNoOffset(managementPreview, coords.x, coords.y, coords.z, false, false, false)
+            end
+
+            SetEntityHeading(managementPreview, heading)
+            PlaceObjectOnGroundProperly(managementPreview)
+
+            if IsDisabledControlPressed(0, 15) then
+                heading = heading + 5.0
+            elseif IsDisabledControlPressed(0, 14) then
+                heading = heading - 5.0
+            elseif IsControlJustPressed(0, 191) then
+                local finalCoords = GetEntityCoords(managementPreview)
+                local result = lib.callback.await('fixlife_facciones:server:saveManagementPoint', false, index, {
+                    x = finalCoords.x, y = finalCoords.y, z = finalCoords.z, heading = GetEntityHeading(managementPreview)
+                })
+                deleteManagementPreview()
+                lib.hideTextUI()
+                SetModelAsNoLongerNeeded(hash)
+                return result == true
+            elseif IsControlJustPressed(0, 177) then
+                deleteManagementPreview()
+                lib.hideTextUI()
+                SetModelAsNoLongerNeeded(hash)
+                return false
+            end
+        end
+    end
+
+    lib.hideTextUI()
+    SetModelAsNoLongerNeeded(hash)
+    return false
+end
 
 local function loadDict(dict)
     RequestAnimDict(dict)
@@ -33,7 +104,7 @@ local function startComputer()
     CreateThread(function()
         Wait(2000)
         if usingComputer and activeComputer == index then
-            SendNUIMessage({ action = 'openLogin', label = computer.label, login = computer.login or {} })
+            SendNUIMessage({ action = 'openLogin', label = computer.label, login = computer.login or {}, features = computer.features or {} })
             SetNuiFocus(true, true)
         end
     end)
@@ -183,6 +254,14 @@ RegisterNUICallback('memberAction', function(data, callback)
     callback({ ok = lib.callback.await('fixlife_facciones:server:memberAction', false, activeComputer, data.action, data.target, data.value) })
 end)
 
+RegisterNUICallback('saveManagementPoint', function(_, callback)
+    SendNUIMessage({ action = 'hidePanel' })
+    SetNuiFocus(false, false)
+    local ok = placeManagementPoint(activeComputer)
+    SetNuiFocus(false, false)
+    callback({ ok = ok })
+end)
+
 local function sitInChair(index)
     local computer = computers[index]
     entering = true
@@ -261,7 +340,8 @@ RegisterNetEvent('fixlife_facciones:client:start', function(index)
     sitInChair(index)
 end)
 
-RegisterNetEvent('fixlife_facciones:client:useComputer', function(index)
+RegisterNetEvent('fixlife_facciones:client:useComputer', function(index, features)
+    if computers[index] then computers[index].features = features or {} end
     if activeComputer == index then startComputer() end
 end)
 
@@ -325,5 +405,6 @@ end)
 
 AddEventHandler('onResourceStop', function(resource)
     if resource ~= GetCurrentResourceName() then return end
+    deleteManagementPreview()
     leaveChair()
 end)

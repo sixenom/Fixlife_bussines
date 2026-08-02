@@ -1,9 +1,44 @@
 local objects, occupied, inside = {}, {}, {}
+local savedPoints = json.decode(LoadResourceFile(GetCurrentResourceName(), 'data/points.json') or '{}') or {}
+
+for organization, point in pairs(savedPoints) do
+    local pointConfig = Config.Organizations[organization]
+    if pointConfig then
+        for index, computer in ipairs(Config.Computers) do
+            if computer.organization == organization then
+                computer.coords = vec3(point.x, point.y, point.z)
+                computer.heading = point.heading or computer.heading
+                computer.chair.coords = vec3(point.x, point.y - 1.05, point.z - 0.2)
+                computer.chair.heading = (point.heading or computer.heading) + 140.0
+                computer.zone.points = {
+                    vec3(point.x - 2.5, point.y - 2.5, point.z), vec3(point.x + 2.5, point.y - 2.5, point.z),
+                    vec3(point.x + 2.5, point.y + 2.5, point.z), vec3(point.x - 2.5, point.y + 2.5, point.z)
+                }
+            end
+        end
+    end
+end
+
+local function getComputer(index)
+    return type(index) == 'number' and Config.Computers[index]
+end
+
+local function getOrganization(index)
+    local computer = getComputer(index)
+    return computer and Config.Organizations[computer.organization]
+end
+
+local function hasFeature(index, feature)
+    if feature == 'settings' then return getOrganization(index) ~= nil end
+    local organization = getOrganization(index)
+    return organization and organization.features and organization.features[feature] == true
+end
 
 local function hasAccess(src, index)
     local player = exports.qbx_core:GetPlayer(src)
     local job = player and player.PlayerData.job
-    return job and job.isboss == true
+    local organization = getOrganization(index)
+    return job and organization and job.name == organization.job and job.isboss == true
 end
 
 local function getManager(src, index)
@@ -33,6 +68,7 @@ local function getMembers(jobName)
 end
 
 lib.callback.register('fixlife_facciones:server:vehicles', function(src, index)
+    if not hasFeature(index, 'vehicles') then return {} end
     local _, job = getManager(src, index)
     if not job then return {} end
 
@@ -56,6 +92,7 @@ lib.callback.register('fixlife_facciones:server:vehicles', function(src, index)
 end)
 
 lib.callback.register('fixlife_facciones:server:vehicleOwner', function(src, index, plate, citizenid)
+    if not hasFeature(index, 'vehicles') then return false end
     local _, job = getManager(src, index)
     local target = exports.qbx_core:GetPlayerByCitizenId(tostring(citizenid or '')) or exports.qbx_core:GetOfflinePlayer(tostring(citizenid or ''))
     if not job or not target or target.PlayerData.job.name ~= job.name or tostring(plate or '') == '' then return false end
@@ -65,6 +102,7 @@ lib.callback.register('fixlife_facciones:server:vehicleOwner', function(src, ind
 end)
 
 lib.callback.register('fixlife_facciones:server:vehicleModel', function(src, index, plate, model)
+    if not hasFeature(index, 'vehicles') then return false end
     local _, job = getManager(src, index)
     model = tostring(model or ''):lower()
     if not job or #model < 2 or #model > 50 or not model:match('^[%w_]+$') then return false end
@@ -74,6 +112,7 @@ lib.callback.register('fixlife_facciones:server:vehicleModel', function(src, ind
 end)
 
 lib.callback.register('fixlife_facciones:server:vehicleState', function(src, index, plate, state)
+    if not hasFeature(index, 'vehicles') then return false end
     local _, job = getManager(src, index)
     state = tonumber(state)
     if not job or (state ~= 0 and state ~= 1) then return false end
@@ -83,18 +122,20 @@ lib.callback.register('fixlife_facciones:server:vehicleState', function(src, ind
 end)
 
 lib.callback.register('fixlife_facciones:server:dashboard', function(src, index)
+    if not getOrganization(index) then return { ok = false } end
     local _, job = getManager(src, index)
     if not job then return { ok = false } end
-    local vehicleCount = MySQL.scalar.await('SELECT COUNT(*) FROM player_vehicles WHERE job_personalowned = ?', { job.name }) or 0
+    local vehicleCount = hasFeature(index, 'vehicles') and MySQL.scalar.await('SELECT COUNT(*) FROM player_vehicles WHERE job_personalowned = ?', { job.name }) or 0
     local balance = 0
-    if GetResourceState('Fixlife_banking') == 'started' then
+    if hasFeature(index, 'finance') and GetResourceState('Fixlife_banking') == 'started' then
         exports['Fixlife_banking']:CreateJobAccount(job)
         balance = exports['Fixlife_banking']:getAccountMoney(job.name) or 0
     end
-    return { ok = true, members = #getMembers(job.name), vehicles = vehicleCount, balance = balance }
+    return { ok = true, members = hasFeature(index, 'members') and #getMembers(job.name) or 0, vehicles = vehicleCount, balance = balance }
 end)
 
 lib.callback.register('fixlife_facciones:server:finance', function(src, index)
+    if not hasFeature(index, 'finance') then return { ok = false, balance = 0, provider = 'Funcion no disponible' } end
     local _, job = getManager(src, index)
     if not job then return { ok = false, balance = 0, provider = 'Sin permiso' } end
     if GetResourceState('Fixlife_banking') ~= 'started' then
@@ -113,6 +154,7 @@ lib.callback.register('fixlife_facciones:server:finance', function(src, index)
 end)
 
 lib.callback.register('fixlife_facciones:server:financeDeposit', function(src, index, amount)
+    if not hasFeature(index, 'finance') then return false end
     local player, job = getManager(src, index)
     amount = math.floor(tonumber(amount) or 0)
     if not player or not job or amount < 1 or amount > 100000000 then return false end
@@ -128,6 +170,7 @@ lib.callback.register('fixlife_facciones:server:financeDeposit', function(src, i
 end)
 
 lib.callback.register('fixlife_facciones:server:members', function(src, index)
+    if not hasFeature(index, 'members') then return { members = {}, grades = {} } end
     local _, job = getManager(src, index)
     if not job then return { members = {}, grades = {} } end
     local grades = {}
@@ -139,6 +182,7 @@ lib.callback.register('fixlife_facciones:server:members', function(src, index)
 end)
 
 lib.callback.register('fixlife_facciones:server:memberAction', function(src, index, action, target, value)
+    if not hasFeature(index, 'members') then return false end
     local manager, job = getManager(src, index)
     if not manager then return false end
 
@@ -178,6 +222,27 @@ lib.callback.register('fixlife_facciones:server:memberAction', function(src, ind
     end
 
     return false
+end)
+
+lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(src, index, point)
+    if not hasFeature(index, 'settings') or not hasAccess(src, index) or type(point) ~= 'table' then return false end
+    local x, y, z = tonumber(point.x), tonumber(point.y), tonumber(point.z)
+    local heading = tonumber(point.heading) or 0
+    if not x or not y or not z or math.abs(x) > 10000 or math.abs(y) > 10000 or z < -100 or z > 2000 then return false end
+
+    local computer = getComputer(index)
+    local organization = computer.organization
+    savedPoints[organization] = { x = x, y = y, z = z, heading = heading }
+    computer.coords = vec3(x, y, z)
+    computer.heading = heading
+    computer.chair.coords = vec3(x, y - 1.05, z - 0.2)
+    computer.chair.heading = heading + 140.0
+    computer.zone.points = {
+        vec3(x - 2.5, y - 2.5, z), vec3(x + 2.5, y - 2.5, z),
+        vec3(x + 2.5, y + 2.5, z), vec3(x - 2.5, y + 2.5, z)
+    }
+    SaveResourceFile(GetCurrentResourceName(), 'data/points.json', json.encode(savedPoints), -1)
+    return true
 end)
 
 local function releaseComputer(index)
@@ -226,19 +291,19 @@ local function spawnComputer(index)
 end
 
 RegisterNetEvent('fixlife_facciones:server:enterZone', function(index)
-    if type(index) ~= 'number' or not Config.Computers[index] then return end
+    if not getComputer(index) then return end
     inside[index] = inside[index] or {}
     inside[index][source] = true
     TriggerClientEvent('fixlife_facciones:client:objects', source, { [index] = spawnComputer(index) })
 end)
 
 RegisterNetEvent('fixlife_facciones:server:exitZone', function(index)
-    if type(index) ~= 'number' or not Config.Computers[index] then return end
+    if not getComputer(index) then return end
     leaveZone(source, index)
 end)
 
 RegisterNetEvent('fixlife_facciones:server:use', function(index)
-    if type(index) ~= 'number' or not Config.Computers[index] then return end
+    if not getComputer(index) then return end
     if not inside[index] or not inside[index][source] or not objects[index] then return end
     if occupied[index] then
         TriggerClientEvent('fixlife_facciones:client:denied', source)
@@ -250,7 +315,7 @@ RegisterNetEvent('fixlife_facciones:server:use', function(index)
 end)
 
 RegisterNetEvent('fixlife_facciones:server:useComputer', function(index)
-    if type(index) ~= 'number' or not Config.Computers[index] then return end
+    if not getComputer(index) then return end
     if occupied[index] ~= source or not hasAccess(source, index) then
         TriggerClientEvent('ox_lib:notify', source, {
             type = 'error',
@@ -258,7 +323,9 @@ RegisterNetEvent('fixlife_facciones:server:useComputer', function(index)
         })
         return
     end
-    TriggerClientEvent('fixlife_facciones:client:useComputer', source, index)
+    local organization = getOrganization(index)
+    organization.features.settings = true
+    TriggerClientEvent('fixlife_facciones:client:useComputer', source, index, organization.features)
 end)
 
 RegisterNetEvent('fixlife_facciones:server:release', function(index)
