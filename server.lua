@@ -1,19 +1,29 @@
 local objects, occupied, inside = {}, {}, {}
 local savedPoints = json.decode(LoadResourceFile(GetCurrentResourceName(), 'data/points.json') or '{}') or {}
 
+local function applyManagementPoint(computer, point)
+    local heading = point.heading or computer.heading
+    local angle = math.rad(heading)
+    local offsetX, offsetY = -0.1908, -1.05
+    local chairX = point.x + offsetX * math.cos(angle) - offsetY * math.sin(angle)
+    local chairY = point.y + offsetX * math.sin(angle) + offsetY * math.cos(angle)
+
+    computer.coords = vec3(point.x, point.y, point.z)
+    computer.heading = heading
+    computer.chair.coords = vec3(chairX, chairY, point.z - 0.2)
+    computer.chair.heading = heading + 140.0
+    computer.zone.points = {
+        vec3(point.x - 2.5, point.y - 2.5, point.z), vec3(point.x + 2.5, point.y - 2.5, point.z),
+        vec3(point.x + 2.5, point.y + 2.5, point.z), vec3(point.x - 2.5, point.y + 2.5, point.z)
+    }
+end
+
 for organization, point in pairs(savedPoints) do
     local pointConfig = Config.Organizations[organization]
     if pointConfig then
         for index, computer in ipairs(Config.Computers) do
             if computer.organization == organization then
-                computer.coords = vec3(point.x, point.y, point.z)
-                computer.heading = point.heading or computer.heading
-                computer.chair.coords = vec3(point.x, point.y - 1.05, point.z - 0.2)
-                computer.chair.heading = (point.heading or computer.heading) + 140.0
-                computer.zone.points = {
-                    vec3(point.x - 2.5, point.y - 2.5, point.z), vec3(point.x + 2.5, point.y - 2.5, point.z),
-                    vec3(point.x + 2.5, point.y + 2.5, point.z), vec3(point.x - 2.5, point.y + 2.5, point.z)
-                }
+                applyManagementPoint(computer, point)
             end
         end
     end
@@ -233,14 +243,7 @@ lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(s
     local computer = getComputer(index)
     local organization = computer.organization
     savedPoints[organization] = { x = x, y = y, z = z, heading = heading }
-    computer.coords = vec3(x, y, z)
-    computer.heading = heading
-    computer.chair.coords = vec3(x, y - 1.05, z - 0.2)
-    computer.chair.heading = heading + 140.0
-    computer.zone.points = {
-        vec3(x - 2.5, y - 2.5, z), vec3(x + 2.5, y - 2.5, z),
-        vec3(x + 2.5, y + 2.5, z), vec3(x - 2.5, y + 2.5, z)
-    }
+    applyManagementPoint(computer, { x = x, y = y, z = z, heading = heading })
     SaveResourceFile(GetCurrentResourceName(), 'data/points.json', json.encode(savedPoints), -1)
     return true
 end)
