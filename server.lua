@@ -183,6 +183,7 @@ end)
 local function releaseComputer(index)
     local entity = NetworkGetEntityFromNetworkId(objects[index].chair)
     if entity ~= 0 then
+        SetEntityHeading(entity, Config.Computers[index].chair.heading)
         FreezeEntityPosition(entity, true)
     end
     occupied[index] = nil
