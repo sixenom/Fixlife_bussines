@@ -90,6 +90,7 @@ window.addEventListener('message', ({ data }) => {
   membersScreen.hidden = true;
   vehiclesScreen.hidden = true;
   financeScreen.hidden = true;
+  adminScreen.classList.remove('internal-view');
   document.querySelectorAll('[data-view]').forEach(item => item.classList.toggle('active', item.dataset.view === 'dashboard'));
   let index = 0;
   const user = String(login.username || '');
@@ -146,6 +147,7 @@ async function showMemberVehicles(member) {
   membersScreen.hidden = true;
   vehiclesScreen.hidden = false;
   financeScreen.hidden = true;
+  adminScreen.classList.add('internal-view');
   await loadVehicles();
   vehicleSearch.value = member.name;
   renderVehicles();
@@ -157,6 +159,7 @@ document.querySelectorAll('[data-view]').forEach(button => button.addEventListen
   const members = button.dataset.view === 'members';
   const vehicleView = button.dataset.view === 'vehicles';
   const financeView = button.dataset.view === 'finance';
+  adminScreen.classList.toggle('internal-view', members || vehicleView || financeView);
   dashboard.hidden = members || vehicleView || financeView;
   membersScreen.hidden = !members || vehicleView;
   vehiclesScreen.hidden = !vehicleView;
@@ -218,3 +221,35 @@ document.querySelector('#login-form').addEventListener('submit', event => {
   loadDashboard();
 });
 document.addEventListener('keyup', ({ key }) => { if (key === 'Escape') modal.hidden ? close() : closeModal(); });
+
+const openView = view => document.querySelector(`#admin-screen nav [data-view="${view}"]`)?.click();
+document.querySelectorAll('.action')[0]?.addEventListener('click', () => openView('members'));
+document.querySelectorAll('.action')[1]?.addEventListener('click', () => openView('finance'));
+const vehicleAction = document.createElement('button');
+vehicleAction.className = 'action';
+vehicleAction.innerHTML = '<b>▣</b><div><strong>Gestionar vehículos</strong><small>Flota asignada al trabajo</small></div><i>›</i>';
+vehicleAction.addEventListener('click', () => openView('vehicles'));
+document.querySelector('.lower .card')?.append(vehicleAction);
+
+const quickViews = [
+  ['♙', 'Gestionar miembros', 'Rangos, permisos y plantilla', 'members'],
+  ['$', 'Consultar finanzas', 'Movimientos y presupuesto', 'finance'],
+  ['▣', 'Gestionar vehículos', 'Flota asignada al trabajo', 'vehicles']
+];
+document.querySelectorAll('.stats article').forEach((card, index) => {
+  const [icon, titleText, description, view] = quickViews[index];
+  card.innerHTML = `<span class="quick-icon">${icon}</span><div><strong>${titleText}</strong><small>${description}</small></div><i>›</i>`;
+  card.addEventListener('click', () => openView(view));
+  card.setAttribute('role', 'button');
+  card.tabIndex = 0;
+});
+document.querySelector('.lower .card:first-child')?.setAttribute('hidden', '');
+
+document.querySelectorAll('#members-screen, #vehicles-screen, #finance-screen').forEach(screen => {
+  const back = document.createElement('button');
+  back.className = 'back-button';
+  back.type = 'button';
+  back.textContent = '← Volver';
+  back.addEventListener('click', () => openView('dashboard'));
+  screen.querySelector('header')?.prepend(back);
+});

@@ -83,3 +83,120 @@ header h1, .welcome h2, .card-title h3, .modal-card h2 { text-transform: upperca
 @keyframes panel-in { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes view-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 #admin-screen > :not([hidden]) { animation: view-in .4s var(--cubic) both; }
+
+/* Vista principal tipo origen_police: mosaico ancho, sin sidebar. */
+#admin-screen { grid-template-columns: 1fr; }
+#admin-screen > aside { display: none; }
+#members-screen, #vehicles-screen, #finance-screen { grid-column: 1; width: 100%; }
+#admin-screen { min-height: calc(100vh - 32px); background: radial-gradient(circle at 50% 10%, #2355a1aa, transparent 48%), linear-gradient(120deg, #06111e, #163b6b 54%, #071321); }
+.police-dashboard { position: relative; overflow: hidden; padding: 34px 5vw 28px; background: radial-gradient(circle at 50% 10%, #2355a1aa, transparent 48%), linear-gradient(120deg, #06111e, #163b6b 54%, #071321); }
+.police-dashboard { min-height: calc(100vh - 32px); }
+.police-dashboard::after { content: ''; position: absolute; right: 2vw; bottom: -12vh; width: 34vw; height: 34vw; opacity: .08; background: url('logos/lspd.webp') center/contain no-repeat; pointer-events: none; }
+.police-dashboard > * { position: relative; z-index: 1; }
+.police-dashboard header { align-items: center; margin-bottom: 24px; }
+.police-dashboard header h1 { margin: 0; padding: 10px 20px; border: 1px solid #ffffff45; border-radius: 7px; color: #fff; background: #ffffff26; font-size: clamp(20px, 2vw, 30px); font-weight: 300; letter-spacing: 3px; text-transform: uppercase; }
+.police-dashboard header > div:first-child > span:not(.status), .police-dashboard .avatar { display: none; }
+.police-dashboard header::after { content: 'EN SERVICIO'; margin-left: auto; color: var(--green); font-size: clamp(14px, 1.5vw, 22px); text-shadow: 0 0 12px #8aff8a88; }
+.police-dashboard .welcome { justify-content: center; margin: -66px 0 30px; pointer-events: none; }
+.police-dashboard .welcome p { display: none; }
+.police-dashboard .welcome h2 { color: var(--accent); font-size: clamp(23px, 2.3vw, 35px); letter-spacing: 2px; text-shadow: 0 0 14px #8adfff77; text-transform: uppercase; }
+.police-dashboard .date { display: none; }
+.police-dashboard .stats { grid-template-columns: repeat(3, minmax(150px, 1fr)); gap: 14px; max-width: 1080px; margin: 0 auto; }
+.police-dashboard .stats article { min-height: 145px; flex-direction: column; justify-content: center; padding: 18px; border: 0; border-radius: 12px; background: linear-gradient(145deg, #ffffff12, #00000036); text-align: center; }
+.police-dashboard .stats article .icon { width: 54px; height: 54px; margin-bottom: 9px; background: transparent; color: #dce5ef; font-size: 42px; }
+.police-dashboard .stats small { color: #e7edf5; font-size: 12px; font-weight: 700; letter-spacing: 0; text-transform: uppercase; }
+.police-dashboard .stats strong { margin: 5px 0 0; color: #ffffffb8; font-size: 12px; }
+.police-dashboard .stats em { display: none; }
+.police-dashboard .lower { grid-template-columns: 1fr 1fr; max-width: 1080px; margin: 245px auto 0; gap: 14px; }
+.police-dashboard .lower .card { min-height: 125px; border: 0; border-radius: 9px; background: #00000058; }
+.police-dashboard .lower .card:first-child { background: linear-gradient(110deg, #2777c2cc, #162d51cc); }
+.police-dashboard .lower .card.activity { background: #00000070; }
+.police-dashboard .lower .card-title { margin-bottom: 9px; }
+.police-dashboard .lower .card-title h3 { color: #fff; font-size: 17px; }
+.police-dashboard .lower .action { padding: 5px 0; }
+.police-dashboard .lower .action b { width: 30px; height: 30px; }
+.police-dashboard .lower .empty { margin-top: 25px; color: #ffffffb8; }
+@media (max-width: 800px) { .police-dashboard .welcome { margin: 0 0 20px; }.police-dashboard .lower { margin-top: 40px; }.police-dashboard .stats { grid-template-columns: repeat(2, 1fr); } }
+#admin-screen.internal-view { grid-template-columns: 225px 1fr; background: #07070cf5; }
+#admin-screen.internal-view > aside { display: flex; padding: 18px 14px; border-right: 0; border-radius: 0; background: #101018b8; box-shadow: inset -1px 0 #ffffff0d; }
+#admin-screen.internal-view > aside .brand { margin: 8px 8px 28px; }
+#admin-screen.internal-view nav button { margin-bottom: 8px; border-radius: 6px; background: #4d51850f; }
+#admin-screen.internal-view nav button.active, #admin-screen.internal-view nav button:hover { color: #fff; background: #24252a5e; box-shadow: none; transform: none; }
+#admin-screen.internal-view nav button.active b { color: #8b78ff; text-shadow: 0 0 10px #573cfa; }
+#admin-screen.internal-view > #members-screen, #admin-screen.internal-view > #vehicles-screen, #admin-screen.internal-view > #finance-screen { grid-column: 2; min-height: 100%; padding: 28px 30px; background: transparent; }
+#admin-screen.internal-view .member-row, #admin-screen.internal-view .vehicle-row, #admin-screen.internal-view .card { border: 0; border-radius: 6px; background: #4d51850f; box-shadow: none; }
+#admin-screen.internal-view .member-row:hover, #admin-screen.internal-view .vehicle-row:hover, #admin-screen.internal-view .card:hover { border-color: transparent; background: #24252a5e; transform: none; }
+#admin-screen.internal-view .member-action, #admin-screen.internal-view .fleet-count { border-color: #573cfa88; color: #c9c2ff; background: #573cfa26; }
+#admin-screen.internal-view .member-action:hover { color: #fff; background: #573cfa; }
+#admin-screen.internal-view .back-button { border-color: #ffffff21; color: #d1d1d1; background: #d1d1d130; }
+#admin-screen.internal-view .back-button:hover { color: #fff; background: #92929269; }
+#admin-screen.internal-view .hire, #admin-screen.internal-view .finance-tools button { border: 0; background: #573cfa; box-shadow: none; }
+#admin-screen.internal-view .hire:hover, #admin-screen.internal-view .finance-tools button:hover { background: #452ec7; color: #fff; }
+#admin-screen.internal-view .finance-hero { border: 0; border-radius: 6px; background: #4d51850f; box-shadow: none; }
+#admin-screen.internal-view .finance-icon { color: #d1caff; background: #573cfa55; }
+@media (max-width: 760px) { #admin-screen.internal-view { grid-template-columns: 1fr; } #admin-screen.internal-view > aside { display: none; } #admin-screen.internal-view > #members-screen, #admin-screen.internal-view > #vehicles-screen, #admin-screen.internal-view > #finance-screen { grid-column: 1; } }
+#admin-screen:not(.internal-view) { background: #07070cfa; }
+#admin-screen:not(.internal-view) .police-dashboard { background: radial-gradient(circle at 18% 0%, #573cfa44, transparent 42%), radial-gradient(circle at 85% 100%, #452ec755, transparent 38%), #07070cfa; }
+#admin-screen:not(.internal-view) .police-dashboard::after { opacity: .045; }
+#admin-screen:not(.internal-view) .police-dashboard header h1 { border-color: #ffffff24; background: #d1d1d130; }
+#admin-screen:not(.internal-view) .stats article { border: 1px solid #ffffff0d; background: #4d51850f; box-shadow: 0 0 4em #0d0d0d55; }
+#admin-screen:not(.internal-view) .stats article .quick-icon { color: #c9c2ff; background: #573cfa55; }
+#admin-screen:not(.internal-view) .stats article:hover { border-color: #573cfa88; background: #24252a5e; box-shadow: 0 0 24px #573cfa33; }
+#admin-screen:not(.internal-view) .lower .card.activity { border: 0; background: #4d51850f; }
+#admin-screen:not(.internal-view) { grid-template-columns: 225px 1fr; }
+#admin-screen:not(.internal-view) > aside { display: flex; padding: 18px 14px; border-right: 0; background: #4d51850f; box-shadow: inset -1px 0 #ffffff0d; }
+#admin-screen:not(.internal-view) > aside .brand { margin: 8px 8px 28px; }
+#admin-screen:not(.internal-view) nav button { margin-bottom: 8px; border-radius: 6px; background: #4d51850f; }
+#admin-screen:not(.internal-view) nav button.active, #admin-screen:not(.internal-view) nav button:hover { color: #fff; background: #24252a5e; box-shadow: none; transform: none; }
+#admin-screen:not(.internal-view) nav button.active b { color: #8b78ff; text-shadow: 0 0 10px #573cfa; }
+#admin-screen:not(.internal-view) > .police-dashboard { grid-column: 2; min-height: 100%; padding: 0 30px 30px; background: transparent; }
+#admin-screen:not(.internal-view) .police-dashboard > header { height: 56px; margin: 0 -30px 28px; padding: 0 30px; background: #00000066; border-bottom: 1px solid #ffffff0d; }
+#admin-screen:not(.internal-view) .police-dashboard header h1 { border: 0; background: none; padding: 0; font-size: 20px; letter-spacing: 1px; }
+#admin-screen:not(.internal-view) .police-dashboard .stats { margin-top: 28px; }
+@keyframes vms-scale-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+@keyframes vms-slide-in { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+@keyframes vms-card-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+#admin-screen:not([hidden]) { animation: vms-scale-in .2s ease-out both; }
+#admin-screen > aside { animation: vms-slide-in .25s ease-out both; }
+#admin-screen > :not([hidden]) .member-row, #admin-screen > :not([hidden]) .vehicle-row, #admin-screen > :not([hidden]) .card, #admin-screen > :not([hidden]) .stats article { animation: vms-card-in .25s ease-out both; }
+#admin-screen > :not([hidden]) .member-row:nth-child(2), #admin-screen > :not([hidden]) .vehicle-row:nth-child(2) { animation-delay: .04s; }
+#admin-screen > :not([hidden]) .member-row:nth-child(3), #admin-screen > :not([hidden]) .vehicle-row:nth-child(3) { animation-delay: .08s; }
+#admin-screen nav button, #admin-screen .member-action, #admin-screen .hire, #admin-screen .back-button, #admin-screen .finance-tools button { transition: background .25s ease, color .25s ease, transform .25s ease, box-shadow .25s ease; }
+#admin-screen .member-action:hover, #admin-screen .hire:hover, #admin-screen .back-button:hover, #admin-screen .finance-tools button:hover { transform: translateY(-2px); }
+
+/* Tokens extraídos de vms_gym/html/css/style.css y management.css. */
+:root { --vms-text: #e7e7e7; --vms-muted: #94a1b2; --vms-main: rgb(87, 60, 250); --vms-main-hover: rgb(69, 46, 199); --vms-main-active: rgb(41, 21, 156); --vms-back: #d1d1d130; --vms-back-hover: #92929269; --vms-menu: #07070cfa; --vms-submenu: #4d51850f; --vms-selected: rgb(36 37 42 / 37%); --vms-radius: .4em; --vms-shadow: 0 0 4em #0d0d0d8c; }
+* { scrollbar-width: thin; scrollbar-color: var(--vms-main) #07070cfa; }
+*::-webkit-scrollbar { width: 3px; height: 3px; }
+*::-webkit-scrollbar-track { background: #07070cfa; border-radius: 10px; }
+*::-webkit-scrollbar-thumb { border-radius: 10px; background: var(--vms-main); }
+*::-webkit-scrollbar-thumb:hover { background: var(--vms-main-hover); }
+#panel, .modal-card { border-radius: var(--vms-radius); box-shadow: var(--vms-shadow); }
+#admin-screen.internal-view, #admin-screen:not(.internal-view) { color: var(--vms-text); background: var(--vms-menu); }
+#admin-screen.internal-view > aside, #admin-screen:not(.internal-view) > aside { border-radius: var(--vms-radius); background: var(--vms-submenu); }
+#admin-screen.internal-view nav button, #admin-screen:not(.internal-view) nav button { border-radius: var(--vms-radius); background: var(--vms-submenu); transition: background .25s, color .25s, transform .25s; }
+#admin-screen.internal-view nav button.active, #admin-screen.internal-view nav button:hover, #admin-screen:not(.internal-view) nav button.active, #admin-screen:not(.internal-view) nav button:hover { background: var(--vms-selected); }
+#admin-screen.internal-view .card, #admin-screen.internal-view .member-row, #admin-screen.internal-view .vehicle-row, #admin-screen:not(.internal-view) .stats article, #admin-screen:not(.internal-view) .card.activity { border-radius: var(--vms-radius); background: var(--vms-submenu); box-shadow: none; }
+#admin-screen.internal-view .member-action, #admin-screen.internal-view .hire, #admin-screen.internal-view .finance-tools button { border-radius: var(--vms-radius); }
+@keyframes scaleIn { 0% { opacity: 0; transform: scale(.5); } 100% { opacity: 1; transform: scale(1); } }
+#admin-screen:not([hidden]) { animation: scaleIn .2s ease-out both; }
+#admin-screen > :not([hidden]) { animation: scaleIn .2s ease-out both; }
+#admin-screen.internal-view > aside { animation: vms-slide-in .25s ease-out both; }
+#admin-screen.internal-view > #members-screen:not([hidden]), #admin-screen.internal-view > #vehicles-screen:not([hidden]), #admin-screen.internal-view > #finance-screen:not([hidden]) { animation: vms-slide-in .25s ease-out both; }
+#admin-screen.internal-view .member-list, #admin-screen.internal-view .vehicle-list, #admin-screen.internal-view .finance-grid { animation: vms-card-in .25s ease-out .05s both; }
+#admin-screen:not(.internal-view) > .police-dashboard:not([hidden]) { animation: vms-slide-in .25s ease-out both; }
+#admin-screen.internal-view > aside, #admin-screen:not(.internal-view) > aside { animation: none; }
+.police-dashboard .stats article { flex-direction: row; justify-content: flex-start; gap: 14px; min-height: 116px; padding: 22px; text-align: left; cursor: pointer; }
+.police-dashboard .stats article .quick-icon { display: grid; width: 48px; height: 48px; flex: 0 0 48px; place-items: center; border-radius: 10px; color: var(--accent); background: #2355a155; font-size: 28px; }
+.police-dashboard .stats article div { flex: 1; }
+.police-dashboard .stats article strong, .police-dashboard .stats article small { display: block; }
+.police-dashboard .stats article strong { margin: 0 0 6px; color: #fff; font-size: 14px; text-transform: uppercase; }
+.police-dashboard .stats article small { color: #ffffff99; font-size: 10px; }
+.police-dashboard .stats article i { color: #ffffffa8; font-size: 28px; font-style: normal; }
+.police-dashboard .stats article:hover { border-color: #8adfff66; background: linear-gradient(145deg, #2355a1aa, #8adfff22); transform: translateY(-4px); }
+.police-dashboard .welcome { display: none; }
+.police-dashboard .lower { margin-top: 70px; }
+#panel, #admin-screen, .police-dashboard { min-height: min(780px, calc(100vh - 40px)); }
+.back-button { align-self: center; margin-right: 18px; padding: 9px 13px; border: 1px solid #8adfff45; border-radius: 5px; color: var(--accent); background: #2355a133; font-size: 11px; cursor: pointer; transition: .25s var(--cubic); }
+.back-button:hover { color: #07101c; background: var(--accent); transform: translateX(-3px); }
+#members-screen header, #vehicles-screen header, #finance-screen header { align-items: center; }
