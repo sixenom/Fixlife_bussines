@@ -4,7 +4,7 @@ Config.Organizations = {
     police = {
         job = 'police',
         features = { settings = true, members = true, vehicles = true, finance = true }
-    },
+    },s
     -- gym = { job = 'gym', features = { members = true, memberships = true, machines = true } }
 }
 

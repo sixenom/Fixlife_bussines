@@ -1,8 +1,10 @@
 local objects, occupied, inside = {}, {}, {}
+local deleteComputer, spawnComputer
 local savedPoints = json.decode(LoadResourceFile(GetCurrentResourceName(), 'data/points.json') or '{}') or {}
 
 local function applyManagementPoint(computer, point)
     local heading = point.heading or 0.0
+    computer.type = point.type == 'tablet' and 'tablet' or 'laptop'
     local angle = math.rad(heading)
     local offsetX, offsetY = -0.1908, -1.05
     local chairX = point.x + offsetX * math.cos(angle) - offsetY * math.sin(angle)
@@ -10,16 +12,19 @@ local function applyManagementPoint(computer, point)
 
     computer.coords = vec3(point.x, point.y, point.z)
     computer.heading = heading
-    computer.chair.coords = vec3(chairX, chairY, point.z - 0.2)
-    computer.chair.heading = heading + 140.0
+    if computer.type == 'laptop' then
+        computer.chair.coords = vec3(chairX, chairY, point.z - 0.2)
+        computer.chair.heading = heading + 140.0
+    end
 end
 
 local function getManagementPoint(index)
     local computer = Config.Computers[index]
-    return {
-        x = computer.coords.x, y = computer.coords.y, z = computer.coords.z, heading = computer.heading,
-        chair = { x = computer.chair.coords.x, y = computer.chair.coords.y, z = computer.chair.coords.z, heading = computer.chair.heading }
-    }
+    local point = { x = computer.coords.x, y = computer.coords.y, z = computer.coords.z, heading = computer.heading, type = computer.type }
+    if computer.type == 'laptop' then
+        point.chair = { x = computer.chair.coords.x, y = computer.chair.coords.y, z = computer.chair.coords.z, heading = computer.chair.heading }
+    end
+    return point
 end
 
 for organization, point in pairs(savedPoints) do
@@ -266,6 +271,7 @@ lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(s
     if not hasFeature(index, 'settings') or not hasAccess(src, index) or type(point) ~= 'table' then return false end
     local x, y, z = tonumber(point.x), tonumber(point.y), tonumber(point.z)
     local heading = tonumber(point.heading) or 0
+    local pointType = point.type == 'tablet' and 'tablet' or 'laptop'
     if not x or not y or not z or math.abs(x) > 10000 or math.abs(y) > 10000 or z < -100 or z > 2000 then return false end
     if not isInsideZone(index, x, y, z) then
         TriggerClientEvent('ox_lib:notify', src, {
@@ -277,19 +283,30 @@ lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(s
 
     local computer = getComputer(index)
     local organization = computer.organization
-    savedPoints[organization] = { x = x, y = y, z = z, heading = heading }
-    applyManagementPoint(computer, { x = x, y = y, z = z, heading = heading })
-    local point = {
-        x = computer.coords.x, y = computer.coords.y, z = computer.coords.z, heading = computer.heading,
-        chair = { x = computer.chair.coords.x, y = computer.chair.coords.y, z = computer.chair.coords.z, heading = computer.chair.heading },
-        zone = computer.zone.points
-    }
+    local previousType = computer.type or 'laptop'
+    savedPoints[organization] = { x = x, y = y, z = z, heading = heading, type = pointType }
+    applyManagementPoint(computer, { x = x, y = y, z = z, heading = heading, type = pointType })
+    local pointData = getManagementPoint(index)
+    pointData.zone = computer.zone.points
+    if previousType ~= pointType and objects[index] then
+        deleteComputer(index)
+    end
+    local spawned = spawnComputer(index)
     SaveResourceFile(GetCurrentResourceName(), 'data/points.json', json.encode(savedPoints), -1)
-    TriggerClientEvent('fixlife_facciones:client:managementPointUpdated', -1, index, point)
+    TriggerClientEvent('fixlife_facciones:client:managementPointUpdated', -1, index, pointData)
+    if previousType ~= pointType then
+        for player in pairs(inside[index] or {}) do
+            TriggerClientEvent('fixlife_facciones:client:objects', player, { [index] = spawned })
+        end
+    end
     return true
 end)
 
 local function releaseComputer(index)
+    if not objects[index] or not objects[index].chair then
+        occupied[index] = nil
+        return
+    end
     local entity = NetworkGetEntityFromNetworkId(objects[index].chair)
     if entity ~= 0 then
         SetEntityHeading(entity, Config.Computers[index].chair.heading)
@@ -298,12 +315,12 @@ local function releaseComputer(index)
     occupied[index] = nil
 end
 
-local function deleteComputer(index)
+deleteComputer = function(index)
     local computer = objects[index]
     if not computer then return end
 
     DeleteEntity(NetworkGetEntityFromNetworkId(computer.monitor))
-    DeleteEntity(NetworkGetEntityFromNetworkId(computer.chair))
+    if computer.chair then DeleteEntity(NetworkGetEntityFromNetworkId(computer.chair)) end
     objects[index] = nil
 end
 
@@ -317,20 +334,24 @@ local function leaveZone(source, index)
     if isEmpty(index) then deleteComputer(index) end
 end
 
-local function spawnComputer(index)
+spawnComputer = function(index)
     if objects[index] then return objects[index] end
     local computer = Config.Computers[index]
-    local monitor = CreateObjectNoOffset(joaat(computer.model), computer.coords.x, computer.coords.y, computer.coords.z, true, true, false)
-    local chair = CreateObjectNoOffset(joaat(computer.chair.model), computer.chair.coords.x, computer.chair.coords.y, computer.chair.coords.z, true, true, false)
+    local model = computer.type == 'tablet' and 'm25_2_prop_m52_aitablet_03a' or computer.model
+    local monitor = CreateObjectNoOffset(joaat(model), computer.coords.x, computer.coords.y, computer.coords.z, true, true, false)
+    local chair
+    if computer.type == 'laptop' then
+        chair = CreateObjectNoOffset(joaat(computer.chair.model), computer.chair.coords.x, computer.chair.coords.y, computer.chair.coords.z, true, true, false)
+    end
 
     SetEntityHeading(monitor, computer.heading)
-    SetEntityHeading(chair, computer.chair.heading)
+    if chair then SetEntityHeading(chair, computer.chair.heading) end
     FreezeEntityPosition(monitor, true)
-    FreezeEntityPosition(chair, true)
+    if chair then FreezeEntityPosition(chair, true) end
     SetEntityOrphanMode(monitor, 2)
-    SetEntityOrphanMode(chair, 2)
+    if chair then SetEntityOrphanMode(chair, 2) end
 
-    objects[index] = { monitor = NetworkGetNetworkIdFromEntity(monitor), chair = NetworkGetNetworkIdFromEntity(chair), point = getManagementPoint(index) }
+    objects[index] = { monitor = NetworkGetNetworkIdFromEntity(monitor), chair = chair and NetworkGetNetworkIdFromEntity(chair) or nil, point = getManagementPoint(index) }
     return objects[index]
 end
 
@@ -353,7 +374,9 @@ RegisterNetEvent('fixlife_facciones:server:use', function(index)
         TriggerClientEvent('fixlife_facciones:client:denied', source)
         return
     end
-    FreezeEntityPosition(NetworkGetEntityFromNetworkId(objects[index].chair), false)
+    if objects[index].chair then
+        FreezeEntityPosition(NetworkGetEntityFromNetworkId(objects[index].chair), false)
+    end
     occupied[index] = source
     TriggerClientEvent('fixlife_facciones:client:start', source, index)
 end)

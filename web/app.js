@@ -13,6 +13,9 @@ settingsScreen.id = 'settings-screen';
 settingsScreen.hidden = true;
 settingsScreen.innerHTML = '<header><div><span class="status"></span><span>Configuración de la organización</span><h1>Puntos de gestión</h1></div></header><section class="card settings-card"><div class="card-title"><h3>Punto de gestión del trabajo</h3><span>SOLO JEFE</span></div><p class="empty">Colócate en la ubicación deseada y guárdala como el nuevo punto del computador de gestión.</p><button class="hire" id="save-management-point">Usar mi ubicación actual</button><p id="settings-status" class="empty"></p></section>';
 document.querySelector('#admin-screen').append(settingsScreen);
+const managementPointType = document.createElement('select');
+managementPointType.innerHTML = '<option value="laptop">Laptop con silla y animación</option><option value="tablet">Tablet sin animación</option>';
+settingsScreen.querySelector('#save-management-point').before(managementPointType);
 const memberList = document.querySelector('#member-list');
 const vehicleList = document.querySelector('#vehicle-list');
 const memberCount = document.querySelector('#member-count');
@@ -214,7 +217,7 @@ document.querySelector('#hire').addEventListener('click', async () => {
 
 document.querySelector('#finance-deposit').addEventListener('click', () => openModal('financeDeposit'));
 document.querySelector('#save-management-point').addEventListener('click', async () => {
-  const result = await nui('saveManagementPoint');
+  const result = await nui('saveManagementPoint', { type: managementPointType.value });
   document.querySelector('#settings-status').textContent = result.ok ? 'Punto guardado. Reinicia el recurso para mover el computador.' : 'Colocación cancelada o no autorizada.';
 });
 

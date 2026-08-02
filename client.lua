@@ -14,11 +14,12 @@ local function deleteManagementPreview()
     managementPreview = nil
 end
 
-local function placeManagementPoint(index)
+local function placeManagementPoint(index, pointType)
     local computer = computers[index]
     if not computer then return end
 
-    local hash = joaat(computer.model)
+    local model = pointType == 'tablet' and 'm25_2_prop_m52_aitablet_03a' or computer.model
+    local hash = joaat(model)
     lib.requestModel(hash)
     local heading = GetEntityHeading(PlayerPedId())
     local hit, coords
@@ -50,7 +51,7 @@ local function placeManagementPoint(index)
             end
 
             SetEntityHeading(managementPreview, heading)
-            PlaceObjectOnGroundProperly(managementPreview)
+            if pointType == 'laptop' then PlaceObjectOnGroundProperly(managementPreview) end
 
             if IsDisabledControlPressed(0, 15) then
                 heading = heading + 5.0
@@ -59,7 +60,7 @@ local function placeManagementPoint(index)
             elseif IsControlJustPressed(0, 191) then
                 local finalCoords = GetEntityCoords(managementPreview)
                 local result = lib.callback.await('fixlife_facciones:server:saveManagementPoint', false, index, {
-                    x = finalCoords.x, y = finalCoords.y, z = finalCoords.z, heading = GetEntityHeading(managementPreview)
+                    x = finalCoords.x, y = finalCoords.y, z = finalCoords.z, heading = GetEntityHeading(managementPreview), type = pointType
                 })
                 deleteManagementPreview()
                 lib.hideTextUI()
@@ -94,10 +95,16 @@ local function playVariant()
 end
 
 local function startComputer()
-    if not seated or usingComputer or exiting then return end
-
     local computer = computers[activeComputer]
+    if not computer or usingComputer or exiting then return end
     local index = activeComputer
+    if computer.type == 'tablet' then
+        usingComputer = true
+        SendNUIMessage({ action = 'openLogin', label = computer.label, login = computer.login or {}, features = computer.features or {} })
+        SetNuiFocus(true, true)
+        return
+    end
+    if not seated then return end
     local entry = computer.entry
     usingComputer = true
     Chairs.stop()
@@ -132,7 +139,13 @@ local function leaveChair()
     SetNuiFocus(false, false)
     Chairs.stop()
     if activeComputer then
-        SetEntityCollision(computers[activeComputer].chairObject, true, true)
+        local computer = computers[activeComputer]
+        if computer.chairObject and computer.chair.coords then
+            SetEntityCoordsNoOffset(computer.chairObject, computer.chair.coords.x, computer.chair.coords.y, computer.chair.coords.z, false, false, false)
+            SetEntityHeading(computer.chairObject, computer.chair.heading)
+            FreezeEntityPosition(computer.chairObject, true)
+            SetEntityCollision(computer.chairObject, true, true)
+        end
         TriggerServerEvent('fixlife_facciones:server:release', activeComputer)
     end
     ClearPedTasks(PlayerPedId())
@@ -158,12 +171,13 @@ local function clearComputer(index)
 
     local computer = computers[index]
     if computer and computer.targetsAdded then
-        exports.ox_target:removeEntity(computer.chairNetId, ('fixlife_facciones:chair:%s'):format(index))
+        exports.ox_target:removeEntity(computer.targetNetId, ('fixlife_facciones:chair:%s'):format(index))
         computer.targetsAdded = nil
     end
     if computer then
         computer.monitorNetId = nil
         computer.chairNetId = nil
+        computer.targetNetId = nil
         computer.chairObject = nil
     end
 end
@@ -173,6 +187,14 @@ local function exitComputer()
 
     local computer = computers[activeComputer]
     local index = activeComputer
+    if computer.type == 'tablet' then
+        SendNUIMessage({ action = 'close' })
+        SetNuiFocus(false, false)
+        usingComputer = false
+        TriggerServerEvent('fixlife_facciones:server:release', index)
+        activeComputer = nil
+        return
+    end
     local entry = computer.entry
     exiting = true
     usingComputer = false
@@ -255,12 +277,12 @@ RegisterNUICallback('memberAction', function(data, callback)
     callback({ ok = lib.callback.await('fixlife_facciones:server:memberAction', false, activeComputer, data.action, data.target, data.value) })
 end)
 
-RegisterNUICallback('saveManagementPoint', function(_, callback)
+RegisterNUICallback('saveManagementPoint', function(data, callback)
     local index = activeComputer
     leaveChair()
     SendNUIMessage({ action = 'hidePanel' })
     SetNuiFocus(false, false)
-    local ok = placeManagementPoint(index)
+    local ok = placeManagementPoint(index, data.type == 'tablet' and 'tablet' or 'laptop')
     SetNuiFocus(false, false)
     callback({ ok = ok })
 end)
@@ -287,11 +309,16 @@ end
 RegisterNetEvent('fixlife_facciones:client:managementPointUpdated', function(index, point)
     local computer = computers[index]
     if not computer or type(point) ~= 'table' then return end
+    local nextType = point.type or 'laptop'
+    if computer.type ~= nextType and computer.targetsAdded then
+        exports.ox_target:removeEntity(computer.targetNetId, ('fixlife_facciones:chair:%s'):format(index))
+        computer.targetsAdded = nil
+        computer.targetNetId = nil
+    end
 
-    for _, objectData in ipairs({
-        {netId = computer.monitorNetId, coords = point, heading = point.heading},
-        {netId = computer.chairNetId, coords = point.chair, heading = point.chair.heading}
-    }) do
+    local objectsToMove = { {netId = computer.monitorNetId, coords = point, heading = point.heading} }
+    if point.chair then objectsToMove[#objectsToMove + 1] = {netId = computer.chairNetId, coords = point.chair, heading = point.chair.heading} end
+    for _, objectData in ipairs(objectsToMove) do
         local entity = objectData.netId and NetToObj(objectData.netId)
         if entity and entity ~= 0 then
             NetworkRequestControlOfEntity(entity)
@@ -303,8 +330,11 @@ RegisterNetEvent('fixlife_facciones:client:managementPointUpdated', function(ind
 
     computer.coords = vec3(point.x, point.y, point.z)
     computer.heading = point.heading
-    computer.chair.coords = vec3(point.chair.x, point.chair.y, point.chair.z)
-    computer.chair.heading = point.chair.heading
+    computer.type = nextType
+    if point.chair then
+        computer.chair.coords = vec3(point.chair.x, point.chair.y, point.chair.z)
+        computer.chair.heading = point.chair.heading
+    end
     computer.zone.points = point.zone
     createManagementZone(index)
 end)
@@ -348,18 +378,21 @@ end
 local function addTargets(index, ids)
     local computer = computers[index]
     if computer.targetsAdded then return end
+    local targetId = computer.type == 'tablet' and ids.monitor or ids.chair
+    if not targetId then return end
 
     CreateThread(function()
         local timeout = GetGameTimer() + 5000
-        while not NetworkDoesEntityExistWithNetworkId(ids.chair) and GetGameTimer() < timeout do Wait(0) end
-        if computer.targetsAdded or computer.chairNetId ~= ids.chair or not NetworkDoesEntityExistWithNetworkId(ids.chair) then return end
+        while not NetworkDoesEntityExistWithNetworkId(targetId) and GetGameTimer() < timeout do Wait(0) end
+        if computer.targetsAdded or computer.targetNetId ~= targetId or not NetworkDoesEntityExistWithNetworkId(targetId) then return end
 
         computer.targetsAdded = true
-        exports.ox_target:addEntity(ids.chair, {
+        computer.targetNetId = targetId
+        exports.ox_target:addEntity(targetId, {
             {
                 name = ('fixlife_facciones:chair:%s'):format(index),
-                icon = 'fa-solid fa-chair',
-                label = 'Sentarse',
+                icon = computer.type == 'tablet' and 'fa-solid fa-tablet-screen-button' or 'fa-solid fa-chair',
+                label = computer.type == 'tablet' and 'Gestionar' or 'Sentarse',
                 distance = 1.5,
                 canInteract = function()
                     return not seated and not entering and not exiting
@@ -378,11 +411,15 @@ RegisterNetEvent('fixlife_facciones:client:objects', function(networkObjects)
             if ids.point then
                 computers[index].coords = vec3(ids.point.x, ids.point.y, ids.point.z)
                 computers[index].heading = ids.point.heading
-                computers[index].chair.coords = vec3(ids.point.chair.x, ids.point.chair.y, ids.point.chair.z)
-                computers[index].chair.heading = ids.point.chair.heading
+                computers[index].type = ids.point.type or 'laptop'
+                if ids.point.chair then
+                    computers[index].chair.coords = vec3(ids.point.chair.x, ids.point.chair.y, ids.point.chair.z)
+                    computers[index].chair.heading = ids.point.chair.heading
+                end
             end
             computers[index].monitorNetId = ids.monitor
             computers[index].chairNetId = ids.chair
+            computers[index].targetNetId = computers[index].type == 'tablet' and ids.monitor or ids.chair
             addTargets(index, ids)
         end
     end
@@ -390,7 +427,11 @@ end)
 
 RegisterNetEvent('fixlife_facciones:client:start', function(index)
     activeComputer = index
-    sitInChair(index)
+    if computers[index] and computers[index].type == 'tablet' then
+        TriggerServerEvent('fixlife_facciones:server:useComputer', index)
+    else
+        sitInChair(index)
+    end
 end)
 
 RegisterNetEvent('fixlife_facciones:client:useComputer', function(index, features)
