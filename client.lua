@@ -4,6 +4,7 @@ local seated = false
 local usingComputer = false
 local entering = false
 local exiting = false
+local controlsActive = false
 local variantIndex = 1
 local variants = { 'base', 'idle_a', 'idle_b', 'idle_c', 'idle_d', 'idle_e' }
 local managementPreview
@@ -192,6 +193,7 @@ local function drawText(coords, text)
 end
 
 local function leaveChair()
+    controlsActive = false
     SendNUIMessage({ action = 'close' })
     SetNuiFocus(false, false)
     Chairs.stop()
@@ -215,6 +217,7 @@ end
 
 local function clearComputer(index)
     if activeComputer == index then
+        controlsActive = false
         SendNUIMessage({ action = 'close' })
         SetNuiFocus(false, false)
         Chairs.stop()
@@ -277,6 +280,7 @@ end
 local function exitChair()
     if exiting or not seated then return end
 
+    controlsActive = false
     exiting = true
     local index = activeComputer
     local computer = computers[index]
@@ -295,6 +299,39 @@ local function exitChair()
         seated = false
         usingComputer = false
         exiting = false
+    end)
+end
+
+local function startControls()
+    if controlsActive then return end
+    controlsActive = true
+
+    CreateThread(function()
+        while controlsActive do
+            DisableControlAction(0, 73, true)
+
+            if IsDisabledControlJustReleased(0, 73) then
+                if usingComputer then exitComputer() else exitChair() end
+            elseif not usingComputer and not exiting then
+                local computer = computers[activeComputer]
+                local monitor = NetToObj(computer.monitorNetId)
+                if monitor ~= 0 then
+                    local coords = GetEntityCoords(monitor)
+                    local onScreen, x, y = GetScreenCoordFromWorldCoord(coords.x, coords.y, coords.z + 0.15)
+                    if onScreen then drawText(vec2(x, y), '[E] Usar computador') end
+                    if IsControlJustReleased(0, 38) then useComputer() end
+                end
+                if IsControlJustReleased(0, 174) then
+                    variantIndex = variantIndex == 1 and #variants or variantIndex - 1
+                    playVariant()
+                elseif IsControlJustReleased(0, 175) then
+                    variantIndex = variantIndex == #variants and 1 or variantIndex + 1
+                    playVariant()
+                end
+            end
+
+            Wait(0)
+        end
     end)
 end
 
@@ -445,6 +482,7 @@ local function sitInChair(index)
 
     Wait(math.max(1000, duration))
     seated = true
+    startControls()
     entering = false
     variantIndex = 1
     playVariant()
@@ -517,6 +555,14 @@ RegisterNetEvent('fixlife_facciones:client:objects', function(networkObjects)
     end
 end)
 
+RegisterNetEvent('fixlife_facciones:client:adminCreatePoint', function(index, pointType)
+    computers[index] = computers[index] or Config.Organizations[index]
+    if not computers[index] then return end
+    applyManagementType(computers[index], pointType)
+    local ok = placeManagementPoint(index, pointType)
+    lib.notify({ type = ok and 'success' or 'error', description = ok and 'Punto de gestion guardado.' or 'Creacion cancelada o no valida.' })
+end)
+
 RegisterNetEvent('fixlife_facciones:client:start', function(index)
     activeComputer = index
     if computers[index] and computers[index].type ~= 'laptop' then
@@ -534,37 +580,6 @@ end)
 RegisterNetEvent('fixlife_facciones:client:denied', function()
     activeComputer = nil
     entering = false
-end)
-
-CreateThread(function()
-    while true do
-        if seated then
-            DisableControlAction(0, 73, true)
-
-            if IsDisabledControlJustReleased(0, 73) then
-                if usingComputer then exitComputer() else exitChair() end
-            elseif not usingComputer and not exiting then
-                local computer = computers[activeComputer]
-                local monitor = NetToObj(computer.monitorNetId)
-                if monitor ~= 0 then
-                    local coords = GetEntityCoords(monitor)
-                    local onScreen, x, y = GetScreenCoordFromWorldCoord(coords.x, coords.y, coords.z + 0.15)
-                    if onScreen then drawText(vec2(x, y), '[E] Usar computador') end
-                    if IsControlJustReleased(0, 38) then useComputer() end
-                end
-                if IsControlJustReleased(0, 174) then
-                    variantIndex = variantIndex == 1 and #variants or variantIndex - 1
-                    playVariant()
-                elseif IsControlJustReleased(0, 175) then
-                    variantIndex = variantIndex == #variants and 1 or variantIndex + 1
-                    playVariant()
-                end
-            end
-            Wait(0)
-        else
-            Wait(500)
-        end
-    end
 end)
 
 CreateThread(function()

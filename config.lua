@@ -4,20 +4,49 @@ Config.Organizations = {
     police = {
         label = 'Terminal de gestion',
         job = 'police',
-        features = { settings = true, members = true, vehicles = true, finance = true },
+        features = {
+            settings = true,
+            members = true,
+            vehicles = true,
+            finance = true
+        },
         zone = {
             name = 'PUNTO COMISARIA',
             points = {
                 vec3(459.35000610352, -933.45001220703, 34.0),
                 vec3(459.04998779297, -922.09997558594, 34.0),
                 vec3(450.0, -922.0, 34.0),
-                vec3(450.04998779297, -933.70001220703, 34.0),
+                vec3(450.04998779297, -933.70001220703, 34.0)
             },
-            thickness = 4.0,
+            thickness = 4.0
         },
         login = {
             logo = 'logos/lspd.webp',
-            username = 'Sixenom',
+            username = 'Administrador',
+            password = '12345678'
+        }
+    },
+    gymplaya = {
+        label = 'Terminal de gestion',
+        job = 'gym1',
+        features = {
+            settings = true,
+            members = true,
+            vehicles = true,
+            finance = true
+        },
+        zone = {
+            name = "GYMPLAYA",
+            points = {
+                vec3(-1196.0, -1587.0, 4.0), vec3(-1213.0, -1562.0, 4.0),
+                vec3(-1211.0, -1556.0, 4.0), vec3(-1203.0, -1555.0, 4.0),
+                vec3(-1185.0, -1580.0, 4.0)
+            },
+            thickness = 4.0
+        },
+        login = {
+            logo = 'logos/lspd.webp',
+            username = 'Administrador',
             password = '12345678'
         }
     }
@@ -26,7 +55,7 @@ Config.Organizations = {
 Config.ManagementTypes = {
     laptop = {
         model = 'm25_1_prop_m51_laptop_02a',
-        chair = { model = 'vw_prop_vw_offchair_01' },
+        chair = {model = 'vw_prop_vw_offchair_01'},
         entry = {
             dict = 'anim@scripted@player@fix_agy_ig6_office_chair_entry@male@',
             pedClip = 'enter',
@@ -39,7 +68,5 @@ Config.ManagementTypes = {
             computerExitChairClip = 'computer_exit_chair'
         }
     },
-    tablet = {
-        model = 'm25_2_prop_m52_aitablet_03a'
-    }
+    tablet = {model = 'm25_2_prop_m52_aitablet_03a'}
 }

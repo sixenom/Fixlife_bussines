@@ -56,6 +56,10 @@ local function hasFeature(index, feature)
     return organization and organization.features and organization.features[feature] == true
 end
 
+local function isAdmin(src)
+    return src == 0 or IsPlayerAceAllowed(src, 'group.admin')
+end
+
 local function isInsideZone(index, x, y, z)
     local computer = getComputer(index)
     local zone = computer and computer.zone
@@ -271,7 +275,7 @@ lib.callback.register('fixlife_facciones:server:memberAction', function(src, ind
 end)
 
 lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(src, index, point)
-    if not hasFeature(index, 'settings') or not hasAccess(src, index) or type(point) ~= 'table' then return false end
+    if not hasFeature(index, 'settings') or (not hasAccess(src, index) and not isAdmin(src)) or type(point) ~= 'table' then return false end
     local x, y, z = tonumber(point.x), tonumber(point.y), tonumber(point.z)
     local heading = tonumber(point.heading) or 0
     local pointType = point.type == 'tablet' and 'tablet' or point.type == 'object' and 'object' or 'laptop'
@@ -292,18 +296,37 @@ lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(s
     applyManagementPoint(computer, { x = x, y = y, z = z, heading = heading, type = pointType, model = point.model })
     local pointData = getManagementPoint(index)
     pointData.zone = computer.zone.points
+    local hadObjects = objects[index] ~= nil
     if previousType ~= pointType and objects[index] then
         deleteComputer(index)
     end
     local spawned = spawnComputer(index)
     SaveResourceFile(GetCurrentResourceName(), 'data/points.json', json.encode(savedPoints), -1)
     TriggerClientEvent('fixlife_facciones:client:managementPointUpdated', -1, index, pointData)
-    if previousType ~= pointType then
+    if not hadObjects or previousType ~= pointType then
         for player in pairs(inside[index] or {}) do
             TriggerClientEvent('fixlife_facciones:client:objects', player, { [index] = spawned })
         end
     end
     return true
+end)
+
+lib.addCommand('facciones', {
+    help = 'Crear o cambiar el punto de gestion de una organizacion',
+    restricted = 'group.admin',
+    params = {
+        { name = 'organizacion', help = 'Identificador de la organizacion', type = 'string' },
+        { name = 'tipo', help = 'laptop, tablet u object', type = 'string' }
+    }
+}, function(src, args)
+    if src == 0 then return end
+    local organization = Config.Organizations[args.organizacion]
+    local pointType = args.tipo == 'tablet' and 'tablet' or args.tipo == 'object' and 'object' or args.tipo == 'laptop' and 'laptop'
+    if not organization or not pointType then
+        TriggerClientEvent('ox_lib:notify', src, { type = 'error', description = 'Organizacion o tipo no valido.' })
+        return
+    end
+    TriggerClientEvent('fixlife_facciones:client:adminCreatePoint', src, args.organizacion, pointType)
 end)
 
 local function releaseComputer(index)
@@ -341,6 +364,7 @@ end
 spawnComputer = function(index)
     if objects[index] then return objects[index] end
     local computer = Config.Organizations[index]
+    if not computer.coords or not computer.type then return end
     local model = computer.model
     local monitor
     if computer.type ~= 'object' then
@@ -366,7 +390,8 @@ RegisterNetEvent('fixlife_facciones:server:enterZone', function(index)
     if not getComputer(index) then return end
     inside[index] = inside[index] or {}
     inside[index][source] = true
-    TriggerClientEvent('fixlife_facciones:client:objects', source, { [index] = spawnComputer(index) })
+    local spawned = spawnComputer(index)
+    if spawned then TriggerClientEvent('fixlife_facciones:client:objects', source, { [index] = spawned }) end
 end)
 
 RegisterNetEvent('fixlife_facciones:server:exitZone', function(index)
