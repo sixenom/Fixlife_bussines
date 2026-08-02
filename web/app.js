@@ -15,7 +15,16 @@ settingsScreen.innerHTML = '<header><div><span class="status"></span><span>Confi
 document.querySelector('#admin-screen').append(settingsScreen);
 const managementPointType = document.createElement('select');
 managementPointType.innerHTML = '<option value="laptop">Laptop con silla y animación</option><option value="tablet">Tablet sin animación</option><option value="object">Objeto del mapa</option>';
-settingsScreen.querySelector('#save-management-point').before(managementPointType);
+managementPointType.className = 'management-type-select';
+const managementPointButton = settingsScreen.querySelector('#save-management-point');
+managementPointButton.className = 'hire management-save';
+const settingsCard = settingsScreen.querySelector('.settings-card');
+const settingsStatus = settingsScreen.querySelector('#settings-status');
+settingsCard.querySelector('.empty').className = 'settings-description';
+const settingsControls = document.createElement('div');
+settingsControls.className = 'settings-controls';
+settingsControls.append(managementPointType, managementPointButton);
+settingsCard.insertBefore(settingsControls, settingsStatus);
 const memberList = document.querySelector('#member-list');
 const vehicleList = document.querySelector('#vehicle-list');
 const memberCount = document.querySelector('#member-count');
@@ -218,7 +227,7 @@ document.querySelector('#hire').addEventListener('click', async () => {
 document.querySelector('#finance-deposit').addEventListener('click', () => openModal('financeDeposit'));
 document.querySelector('#save-management-point').addEventListener('click', async () => {
   const result = await nui('saveManagementPoint', { type: managementPointType.value });
-  document.querySelector('#settings-status').textContent = result.ok ? 'Punto guardado. Reinicia el recurso para mover el computador.' : 'Colocación cancelada o no autorizada.';
+  document.querySelector('#settings-status').textContent = result.ok ? 'Punto guardado correctamente.' : 'Colocación cancelada o no autorizada.';
 });
 
 memberList.addEventListener('click', async event => {

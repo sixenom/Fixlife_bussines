@@ -182,7 +182,7 @@ header h1, .welcome h2, .card-title h3, .modal-card h2 { text-transform: upperca
 #admin-screen:not([hidden]) { animation: scaleIn .2s ease-out both; }
 #admin-screen > :not([hidden]) { animation: scaleIn .2s ease-out both; }
 #admin-screen.internal-view > aside { animation: vms-slide-in .25s ease-out both; }
-#admin-screen.internal-view > #members-screen:not([hidden]), #admin-screen.internal-view > #vehicles-screen:not([hidden]), #admin-screen.internal-view > #finance-screen:not([hidden]) { animation: vms-slide-in .25s ease-out both; }
+#admin-screen.internal-view > #members-screen:not([hidden]), #admin-screen.internal-view > #vehicles-screen:not([hidden]), #admin-screen.internal-view > #finance-screen:not([hidden]), #admin-screen.internal-view > #settings-screen:not([hidden]) { animation: vms-slide-in .25s ease-out both; }
 #admin-screen.internal-view .member-list, #admin-screen.internal-view .vehicle-list, #admin-screen.internal-view .finance-grid { animation: vms-card-in .25s ease-out .05s both; }
 #admin-screen:not(.internal-view) > .police-dashboard:not([hidden]) { animation: vms-slide-in .25s ease-out both; }
 #admin-screen.internal-view > aside, #admin-screen:not(.internal-view) > aside { animation: none; }
@@ -210,3 +210,23 @@ header h1, .welcome h2, .card-title h3, .modal-card h2 { text-transform: upperca
 .back-button { align-self: center; margin-right: 18px; padding: 9px 13px; border: 1px solid #8adfff45; border-radius: 5px; color: var(--accent); background: #2355a133; font-size: 11px; cursor: pointer; transition: .25s var(--cubic); }
 .back-button:hover { color: #07101c; background: var(--accent); transform: translateX(-3px); }
 #members-screen header, #vehicles-screen header, #finance-screen header { align-items: center; }
+
+#settings-screen[hidden] { display: none; }
+#admin-screen > #settings-screen { grid-area: content; grid-column: auto; min-width: 0; }
+#admin-screen.internal-view > #settings-screen { grid-column: 2; min-height: 100%; padding: 28px 30px; background: transparent; }
+#admin-screen.internal-view > #settings-screen > header { align-items: center; }
+.settings-card { min-height: 0; padding: 24px; }
+.settings-card .card-title { margin-bottom: 28px; }
+.settings-description { max-width: 680px; margin: 0 0 22px; color: var(--vms-muted); line-height: 1.6; }
+.settings-controls { display: flex; align-items: center; gap: 10px; max-width: 720px; }
+.management-type-select { min-width: 250px; height: 38px; padding: 0 12px; border: 1px solid #ffffff18; border-radius: var(--vms-radius); color: var(--vms-text); background: #07070caa; outline: none; font: inherit; cursor: pointer; }
+.management-type-select:focus { border-color: #573cfa; box-shadow: 0 0 0 2px #573cfa33; }
+.management-type-select option { color: var(--vms-text); background: #171722; }
+.settings-card .management-save { height: 38px; margin: 0; white-space: nowrap; }
+.settings-card #settings-status { min-height: 18px; margin: 18px 0 0; text-align: left; }
+.settings-card:hover { transform: none; box-shadow: none; }
+@media (max-width: 760px) {
+  #admin-screen.internal-view > #settings-screen { grid-column: 1; padding: 22px 18px; }
+  .settings-controls { align-items: stretch; flex-direction: column; }
+  .management-type-select, .settings-card .management-save { width: 100%; }
+}
