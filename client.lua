@@ -8,7 +8,6 @@ local variantIndex = 1
 local variants = { 'base', 'idle_a', 'idle_b', 'idle_c', 'idle_d', 'idle_e' }
 local managementPreview
 local zones = {}
-local zoneRevision = {}
 
 local function deleteManagementPreview()
     if managementPreview and DoesEntityExist(managementPreview) then DeleteEntity(managementPreview) end
@@ -271,9 +270,8 @@ local function createManagementZone(index)
     local zone = computer and computer.zone
     if not zone then return end
     if zones[index] then zones[index]:remove() end
-    zoneRevision[index] = (zoneRevision[index] or 0) + 1
     zones[index] = lib.zones.poly({
-        name = ('%s:%s:%s'):format(zone.name, index, zoneRevision[index]),
+        name = zone.name,
         points = zone.points,
         thickness = zone.thickness,
         onEnter = function()
