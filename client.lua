@@ -8,15 +8,63 @@ local variantIndex = 1
 local variants = { 'base', 'idle_a', 'idle_b', 'idle_c', 'idle_d', 'idle_e' }
 local managementPreview
 local zones = {}
+local addTargets
 
 local function deleteManagementPreview()
     if managementPreview and DoesEntityExist(managementPreview) then DeleteEntity(managementPreview) end
     managementPreview = nil
 end
 
+local function selectManagementObject(index)
+    local selectedEntity
+    local hit, entity, coords
+    lib.showTextUI('[Enter] Seleccionar objeto  |  [Backspace] Cancelar')
+
+    CreateThread(function()
+        while selectedEntity ~= false do
+            hit, entity, coords = lib.raycast.fromCamera(511, 4, 30.0)
+            Wait(1)
+        end
+    end)
+
+    selectedEntity = nil
+    while selectedEntity ~= false do
+        Wait(0)
+        SetPauseMenuActive(false)
+        if hit and entity and entity ~= 0 and GetEntityType(entity) == 3 then
+            if selectedEntity and selectedEntity ~= entity then SetEntityDrawOutline(selectedEntity, false) end
+            selectedEntity = entity
+            SetEntityDrawOutline(entity, true)
+            if IsControlJustPressed(0, 191) then
+                local objectCoords = GetEntityCoords(entity)
+                local point = {
+                    x = objectCoords.x, y = objectCoords.y, z = objectCoords.z,
+                    heading = GetEntityHeading(entity), model = GetEntityModel(entity), type = 'object'
+                }
+                SetEntityDrawOutline(entity, false)
+                selectedEntity = false
+                lib.hideTextUI()
+                return lib.callback.await('fixlife_facciones:server:saveManagementPoint', false, index, point) == true
+            end
+        elseif selectedEntity then
+            SetEntityDrawOutline(selectedEntity, false)
+            selectedEntity = nil
+        end
+
+        if IsControlJustPressed(0, 177) then
+            if selectedEntity then SetEntityDrawOutline(selectedEntity, false) end
+            selectedEntity = false
+            lib.hideTextUI()
+            return false
+        end
+    end
+end
+
 local function placeManagementPoint(index, pointType)
     local computer = computers[index]
     if not computer then return end
+
+    if pointType == 'object' then return selectManagementObject(index) end
 
     local model = pointType == 'tablet' and 'm25_2_prop_m52_aitablet_03a' or computer.model
     local hash = joaat(model)
@@ -98,7 +146,7 @@ local function startComputer()
     local computer = computers[activeComputer]
     if not computer or usingComputer or exiting then return end
     local index = activeComputer
-    if computer.type == 'tablet' then
+    if computer.type ~= 'laptop' then
         usingComputer = true
         SendNUIMessage({ action = 'openLogin', label = computer.label, login = computer.login or {}, features = computer.features or {} })
         SetNuiFocus(true, true)
@@ -171,13 +219,18 @@ local function clearComputer(index)
 
     local computer = computers[index]
     if computer and computer.targetsAdded then
-        exports.ox_target:removeEntity(computer.targetNetId, ('fixlife_facciones:chair:%s'):format(index))
+        if computer.targetZoneId then
+            exports.ox_target:removeZone(computer.targetZoneId)
+        else
+            exports.ox_target:removeEntity(computer.targetNetId, ('fixlife_facciones:chair:%s'):format(index))
+        end
         computer.targetsAdded = nil
     end
     if computer then
         computer.monitorNetId = nil
         computer.chairNetId = nil
         computer.targetNetId = nil
+        computer.targetZoneId = nil
         computer.chairObject = nil
     end
 end
@@ -187,7 +240,7 @@ local function exitComputer()
 
     local computer = computers[activeComputer]
     local index = activeComputer
-    if computer.type == 'tablet' then
+    if computer.type ~= 'laptop' then
         SendNUIMessage({ action = 'close' })
         SetNuiFocus(false, false)
         usingComputer = false
@@ -282,7 +335,8 @@ RegisterNUICallback('saveManagementPoint', function(data, callback)
     leaveChair()
     SendNUIMessage({ action = 'hidePanel' })
     SetNuiFocus(false, false)
-    local ok = placeManagementPoint(index, data.type == 'tablet' and 'tablet' or 'laptop')
+    local pointType = data.type == 'tablet' and 'tablet' or data.type == 'object' and 'object' or 'laptop'
+    local ok = placeManagementPoint(index, pointType)
     SetNuiFocus(false, false)
     callback({ ok = ok })
 end)
@@ -311,9 +365,19 @@ RegisterNetEvent('fixlife_facciones:client:managementPointUpdated', function(ind
     if not computer or type(point) ~= 'table' then return end
     local nextType = point.type or 'laptop'
     if computer.type ~= nextType and computer.targetsAdded then
-        exports.ox_target:removeEntity(computer.targetNetId, ('fixlife_facciones:chair:%s'):format(index))
+        if computer.targetZoneId then
+            exports.ox_target:removeZone(computer.targetZoneId)
+        else
+            exports.ox_target:removeEntity(computer.targetNetId, ('fixlife_facciones:chair:%s'):format(index))
+        end
         computer.targetsAdded = nil
         computer.targetNetId = nil
+        computer.targetZoneId = nil
+    end
+    if nextType == 'object' and computer.targetZoneId then
+        exports.ox_target:removeZone(computer.targetZoneId)
+        computer.targetsAdded = nil
+        computer.targetZoneId = nil
     end
 
     local objectsToMove = { {netId = computer.monitorNetId, coords = point, heading = point.heading} }
@@ -331,12 +395,14 @@ RegisterNetEvent('fixlife_facciones:client:managementPointUpdated', function(ind
     computer.coords = vec3(point.x, point.y, point.z)
     computer.heading = point.heading
     computer.type = nextType
+    computer.objectModel = point.model
     if point.chair then
         computer.chair.coords = vec3(point.chair.x, point.chair.y, point.chair.z)
         computer.chair.heading = point.chair.heading
     end
     computer.zone.points = point.zone
     createManagementZone(index)
+    if nextType == 'object' then addTargets(index, {}) end
 end)
 
 local function sitInChair(index)
@@ -375,9 +441,25 @@ local function sitInChair(index)
     playVariant()
 end
 
-local function addTargets(index, ids)
+addTargets = function(index, ids)
     local computer = computers[index]
     if computer.targetsAdded then return end
+    if computer.type == 'object' then
+        computer.targetsAdded = true
+        computer.targetZoneId = exports.ox_target:addSphereZone({
+            coords = computer.coords,
+            radius = 1.25,
+            options = {
+                {
+                    name = ('fixlife_facciones:chair:%s'):format(index),
+                    icon = 'fa-solid fa-hand-pointer',
+                    label = 'Gestionar',
+                    onSelect = function() TriggerServerEvent('fixlife_facciones:server:use', index) end
+                }
+            }
+        })
+        return
+    end
     local targetId = computer.type == 'tablet' and ids.monitor or ids.chair
     if not targetId then return end
 
@@ -412,6 +494,7 @@ RegisterNetEvent('fixlife_facciones:client:objects', function(networkObjects)
                 computers[index].coords = vec3(ids.point.x, ids.point.y, ids.point.z)
                 computers[index].heading = ids.point.heading
                 computers[index].type = ids.point.type or 'laptop'
+                computers[index].objectModel = ids.point.model
                 if ids.point.chair then
                     computers[index].chair.coords = vec3(ids.point.chair.x, ids.point.chair.y, ids.point.chair.z)
                     computers[index].chair.heading = ids.point.chair.heading
@@ -427,7 +510,7 @@ end)
 
 RegisterNetEvent('fixlife_facciones:client:start', function(index)
     activeComputer = index
-    if computers[index] and computers[index].type == 'tablet' then
+    if computers[index] and computers[index].type ~= 'laptop' then
         TriggerServerEvent('fixlife_facciones:server:useComputer', index)
     else
         sitInChair(index)
