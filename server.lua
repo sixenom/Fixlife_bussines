@@ -2,7 +2,7 @@ local objects, occupied, inside = {}, {}, {}
 local savedPoints = json.decode(LoadResourceFile(GetCurrentResourceName(), 'data/points.json') or '{}') or {}
 
 local function applyManagementPoint(computer, point)
-    local heading = point.heading or computer.heading
+    local heading = point.heading or 0.0
     local angle = math.rad(heading)
     local offsetX, offsetY = -0.1908, -1.05
     local chairX = point.x + offsetX * math.cos(angle) - offsetY * math.sin(angle)
@@ -12,6 +12,14 @@ local function applyManagementPoint(computer, point)
     computer.heading = heading
     computer.chair.coords = vec3(chairX, chairY, point.z - 0.2)
     computer.chair.heading = heading + 140.0
+end
+
+local function getManagementPoint(index)
+    local computer = Config.Computers[index]
+    return {
+        x = computer.coords.x, y = computer.coords.y, z = computer.coords.z, heading = computer.heading,
+        chair = { x = computer.chair.coords.x, y = computer.chair.coords.y, z = computer.chair.coords.z, heading = computer.chair.heading }
+    }
 end
 
 for organization, point in pairs(savedPoints) do
@@ -322,7 +330,7 @@ local function spawnComputer(index)
     SetEntityOrphanMode(monitor, 2)
     SetEntityOrphanMode(chair, 2)
 
-    objects[index] = { monitor = NetworkGetNetworkIdFromEntity(monitor), chair = NetworkGetNetworkIdFromEntity(chair) }
+    objects[index] = { monitor = NetworkGetNetworkIdFromEntity(monitor), chair = NetworkGetNetworkIdFromEntity(chair), point = getManagementPoint(index) }
     return objects[index]
 end
 

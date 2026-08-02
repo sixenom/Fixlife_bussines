@@ -13,12 +13,8 @@ Config.Computers = {
     {
         label = 'Terminal de gestión',
         organization = 'police',
-        coords = vec3(455.2048, -930.862732, 34.0772438),
-        heading = 0.0,
         model = 'm25_1_prop_m51_laptop_02a',
         chair = {
-            coords = vec3(455.0140, -931.9128, 33.88),
-            heading = 140.0,
             model = 'vw_prop_vw_offchair_01'
         },
         zone = {

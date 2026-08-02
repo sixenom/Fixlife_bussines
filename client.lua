@@ -375,6 +375,12 @@ end
 RegisterNetEvent('fixlife_facciones:client:objects', function(networkObjects)
     for index, ids in pairs(networkObjects) do
         if computers[index] then
+            if ids.point then
+                computers[index].coords = vec3(ids.point.x, ids.point.y, ids.point.z)
+                computers[index].heading = ids.point.heading
+                computers[index].chair.coords = vec3(ids.point.chair.x, ids.point.chair.y, ids.point.chair.z)
+                computers[index].chair.heading = ids.point.chair.heading
+            end
             computers[index].monitorNetId = ids.monitor
             computers[index].chairNetId = ids.chair
             addTargets(index, ids)
