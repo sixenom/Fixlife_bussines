@@ -125,7 +125,7 @@ function renderVehicles() {
   const query = vehicleSearch.value.toLowerCase();
   const filtered = vehicles.filter(vehicle => `${vehicle.plate} ${vehicle.owner} ${vehicle.model}`.toLowerCase().includes(query));
   fleetCount.textContent = `${filtered.length} vehículo${filtered.length === 1 ? '' : 's'}`;
-  vehicleList.innerHTML = filtered.map(vehicle => `<article class="vehicle-row" data-plate="${vehicle.plate}"><span class="vehicle-icon">▣</span><div class="member-info"><strong>${vehicle.plate}</strong><small>Modelo: ${vehicle.model} · ${vehicle.type}</small></div><div class="vehicle-owner"><small>PROPIETARIO</small><strong>${vehicle.owner}</strong><em class="vehicle-status">${vehicle.status}</em></div><button class="member-action" data-action="vehicleModel">Modelo</button><button class="member-action" data-action="vehicleState">Estado</button><button class="member-action" data-action="vehicleOwner">Dueño</button></article>`).join('') || '<p class="empty members-empty">No hay vehículos asignados a este trabajo.</p>';
+  vehicleList.innerHTML = filtered.map(vehicle => `<article class="vehicle-row" data-plate="${vehicle.plate}"><span class="vehicle-icon"><i class="fa-solid fa-car-side"></i></span><div class="member-info"><strong>${vehicle.plate}</strong><small>Modelo: ${vehicle.model} · ${vehicle.type}</small></div><div class="vehicle-owner"><small>PROPIETARIO</small><strong>${vehicle.owner}</strong><em class="vehicle-status">${vehicle.status}</em></div><button class="member-action" data-action="vehicleModel">Modelo</button><button class="member-action" data-action="vehicleState">Estado</button><button class="member-action" data-action="vehicleOwner">Dueño</button></article>`).join('') || '<p class="empty members-empty">No hay vehículos asignados a este trabajo.</p>';
 }
 
 async function loadVehicles() {
@@ -227,18 +227,18 @@ document.querySelectorAll('.action')[0]?.addEventListener('click', () => openVie
 document.querySelectorAll('.action')[1]?.addEventListener('click', () => openView('finance'));
 const vehicleAction = document.createElement('button');
 vehicleAction.className = 'action';
-vehicleAction.innerHTML = '<b>▣</b><div><strong>Gestionar vehículos</strong><small>Flota asignada al trabajo</small></div><i>›</i>';
+vehicleAction.innerHTML = '<b><i class="fa-solid fa-car"></i></b><div><strong>Gestionar vehículos</strong><small>Flota asignada al trabajo</small></div><i class="fa-solid fa-chevron-right"></i>';
 vehicleAction.addEventListener('click', () => openView('vehicles'));
 document.querySelector('.lower .card')?.append(vehicleAction);
 
 const quickViews = [
-  ['♙', 'Gestionar miembros', 'Rangos, permisos y plantilla', 'members'],
-  ['$', 'Consultar finanzas', 'Movimientos y presupuesto', 'finance'],
-  ['▣', 'Gestionar vehículos', 'Flota asignada al trabajo', 'vehicles']
+  ['<i class="fa-solid fa-users"></i>', 'Gestionar miembros', 'Rangos, permisos y plantilla', 'members'],
+  ['<i class="fa-solid fa-dollar-sign"></i>', 'Consultar finanzas', 'Movimientos y presupuesto', 'finance'],
+  ['<i class="fa-solid fa-car"></i>', 'Gestionar vehículos', 'Flota asignada al trabajo', 'vehicles']
 ];
 document.querySelectorAll('.stats article').forEach((card, index) => {
   const [icon, titleText, description, view] = quickViews[index];
-  card.innerHTML = `<span class="quick-icon">${icon}</span><div><strong>${titleText}</strong><small>${description}</small></div><i>›</i>`;
+  card.innerHTML = `<span class="quick-icon">${icon}</span><div><strong>${titleText}</strong><small>${description}</small></div><i class="fa-solid fa-chevron-right"></i>`;
   card.addEventListener('click', () => openView(view));
   card.setAttribute('role', 'button');
   card.tabIndex = 0;
