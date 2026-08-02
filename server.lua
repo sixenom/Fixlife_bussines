@@ -365,13 +365,18 @@ spawnComputer = function(index)
     if objects[index] then return objects[index] end
     local computer = Config.Organizations[index]
     if not computer.coords or not computer.type then return end
-    local model = computer.model
+    local typeConfig = Config.ManagementTypes[computer.type]
+    local model = computer.model or typeConfig and typeConfig.model
+    if computer.type ~= 'object' and type(model) ~= 'string' then
+        print(('[Fixlife_facciones] Punto de gestion invalido para %s: falta el modelo de %s.'):format(index, computer.type))
+        return
+    end
     local monitor
     if computer.type ~= 'object' then
         monitor = CreateObjectNoOffset(joaat(model), computer.coords.x, computer.coords.y, computer.coords.z, true, true, false)
     end
     local chair
-    if computer.type == 'laptop' then
+    if computer.type == 'laptop' and computer.chair and type(computer.chair.model) == 'string' and computer.chair.coords then
         chair = CreateObjectNoOffset(joaat(computer.chair.model), computer.chair.coords.x, computer.chair.coords.y, computer.chair.coords.z, true, true, false)
     end
 
