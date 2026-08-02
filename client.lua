@@ -7,6 +7,8 @@ local exiting = false
 local variantIndex = 1
 local variants = { 'base', 'idle_a', 'idle_b', 'idle_c', 'idle_d', 'idle_e' }
 local managementPreview
+local zones = {}
+local zoneRevision = {}
 
 local function deleteManagementPreview()
     if managementPreview and DoesEntityExist(managementPreview) then DeleteEntity(managementPreview) end
@@ -255,11 +257,44 @@ RegisterNUICallback('memberAction', function(data, callback)
 end)
 
 RegisterNUICallback('saveManagementPoint', function(_, callback)
+    local index = activeComputer
+    leaveChair()
     SendNUIMessage({ action = 'hidePanel' })
     SetNuiFocus(false, false)
-    local ok = placeManagementPoint(activeComputer)
+    local ok = placeManagementPoint(index)
     SetNuiFocus(false, false)
     callback({ ok = ok })
+end)
+
+local function createManagementZone(index)
+    local computer = computers[index]
+    local zone = computer and computer.zone
+    if not zone then return end
+    if zones[index] then zones[index]:remove() end
+    zoneRevision[index] = (zoneRevision[index] or 0) + 1
+    zones[index] = lib.zones.poly({
+        name = ('%s:%s:%s'):format(zone.name, index, zoneRevision[index]),
+        points = zone.points,
+        thickness = zone.thickness,
+        onEnter = function()
+            TriggerServerEvent('fixlife_facciones:server:enterZone', index)
+        end,
+        onExit = function()
+            clearComputer(index)
+            TriggerServerEvent('fixlife_facciones:server:exitZone', index)
+        end
+    })
+end
+
+RegisterNetEvent('fixlife_facciones:client:managementPointUpdated', function(index, point)
+    local computer = computers[index]
+    if not computer or type(point) ~= 'table' then return end
+    computer.coords = vec3(point.x, point.y, point.z)
+    computer.heading = point.heading
+    computer.chair.coords = vec3(point.chair.x, point.chair.y, point.chair.z)
+    computer.chair.heading = point.chair.heading
+    computer.zone.points = point.zone
+    createManagementZone(index)
 end)
 
 local function sitInChair(index)
@@ -387,18 +422,7 @@ CreateThread(function()
         local zone = computer.zone
         if zone then
             local index = i
-            lib.zones.poly({
-                name = zone.name,
-                points = zone.points,
-                thickness = zone.thickness,
-                onEnter = function()
-                    TriggerServerEvent('fixlife_facciones:server:enterZone', index)
-                end,
-                onExit = function()
-                    clearComputer(index)
-                    TriggerServerEvent('fixlife_facciones:server:exitZone', index)
-                end
-            })
+            createManagementZone(index)
         end
     end
 end)

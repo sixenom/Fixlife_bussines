@@ -244,7 +244,27 @@ lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(s
     local organization = computer.organization
     savedPoints[organization] = { x = x, y = y, z = z, heading = heading }
     applyManagementPoint(computer, { x = x, y = y, z = z, heading = heading })
+    local point = {
+        x = computer.coords.x, y = computer.coords.y, z = computer.coords.z, heading = computer.heading,
+        chair = { x = computer.chair.coords.x, y = computer.chair.coords.y, z = computer.chair.coords.z, heading = computer.chair.heading },
+        zone = computer.zone.points
+    }
+    local spawned = objects[index]
+    if spawned then
+        local monitor = NetworkGetEntityFromNetworkId(spawned.monitor)
+        local chair = NetworkGetEntityFromNetworkId(spawned.chair)
+        if monitor ~= 0 then
+            SetEntityCoordsNoOffset(monitor, computer.coords.x, computer.coords.y, computer.coords.z, false, false, false)
+            SetEntityHeading(monitor, computer.heading)
+        end
+        if chair ~= 0 then
+            SetEntityCoordsNoOffset(chair, computer.chair.coords.x, computer.chair.coords.y, computer.chair.coords.z, false, false, false)
+            SetEntityHeading(chair, computer.chair.heading)
+            FreezeEntityPosition(chair, true)
+        end
+    end
     SaveResourceFile(GetCurrentResourceName(), 'data/points.json', json.encode(savedPoints), -1)
+    TriggerClientEvent('fixlife_facciones:client:managementPointUpdated', -1, index, point)
     return true
 end)
 
