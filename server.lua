@@ -184,6 +184,24 @@ lib.callback.register('fixlife_facciones:server:dashboard', function(src, index)
     return { ok = true, members = hasFeature(index, 'members') and #getMembers(job.name) or 0, vehicles = vehicleCount, balance = balance }
 end)
 
+lib.callback.register('fixlife_facciones:server:gymData', function(src, index)
+    if not hasFeature(index, 'gymManagement') or not getManager(src, index) then return {} end
+    if GetResourceState('Fixlife_gyms') ~= 'started' then return {} end
+    local ok, data = pcall(function()
+        return exports['Fixlife_gyms']:getManagementData('Gym_1')
+    end)
+    if not ok then print(('[Fixlife_entity_manager] No se pudieron cargar los datos del gimnasio: %s'):format(data)) end
+    return ok and data or {}
+end)
+
+lib.callback.register('fixlife_facciones:server:openGymCreator', function(src, index, machineType)
+        if not hasFeature(index, 'gymManagement') or not getManager(src, index) then return false end
+        if GetResourceState('Fixlife_gyms') ~= 'started' then return false end
+        if type(machineType) ~= 'string' or machineType == '' then return false end
+        TriggerClientEvent('vms_gym:custom:place', src, machineType)
+        return true
+    end)
+
 lib.callback.register('fixlife_facciones:server:finance', function(src, index)
     if not hasFeature(index, 'finance') then return { ok = false, balance = 0, provider = 'Funcion no disponible' } end
     local _, job = getManager(src, index)
@@ -201,6 +219,19 @@ lib.callback.register('fixlife_facciones:server:finance', function(src, index)
             FROM fixlife_banking_org_transactions WHERE account_id = ?
             ORDER BY id DESC LIMIT 20]], { job.name }) or {}
     }
+end)
+
+lib.callback.register('fixlife_facciones:server:gymMembershipAction', function(src, index, action, identifier, expires)
+    if not hasFeature(index, 'gymManagement') or not getManager(src, index) then return false end
+    if GetResourceState('Fixlife_gyms') ~= 'started' then return false end
+    if action ~= 'revoke' and action ~= 'expiry' then return false end
+    return exports['Fixlife_gyms']:updateManagementMembership(identifier, action, expires) == true
+end)
+
+lib.callback.register('fixlife_facciones:server:updateGymPlan', function(src, index, durationHours, price)
+    if not hasFeature(index, 'gymManagement') or not getManager(src, index) then return false end
+    if GetResourceState('Fixlife_gyms') ~= 'started' then return false end
+    return exports['Fixlife_gyms']:updateMembershipPlan('Gym_1', durationHours, price) == true
 end)
 
 lib.callback.register('fixlife_facciones:server:financeDeposit', function(src, index, amount)

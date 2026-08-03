@@ -33,7 +33,8 @@ Config.Organizations = {
             settings = true,
             members = true,
             vehicles = true,
-            finance = true
+            finance = true,
+            gymManagement = true
         },
         zone = {
             name = "GYMPLAYA",

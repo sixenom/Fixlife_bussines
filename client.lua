@@ -340,6 +340,28 @@ RegisterNUICallback('close', function(_, callback)
     callback({ ok = true })
 end)
 
+RegisterNUICallback('gymData', function(_, callback)
+    callback(lib.callback.await('fixlife_facciones:server:gymData', false, activeComputer))
+end)
+
+RegisterNUICallback('gymMembershipAction', function(data, callback)
+    callback({ ok = lib.callback.await('fixlife_facciones:server:gymMembershipAction', false, activeComputer, data.action, data.identifier, data.expires) == true })
+end)
+
+RegisterNUICallback('updateGymPlan', function(data, callback)
+    callback({ ok = lib.callback.await('fixlife_facciones:server:updateGymPlan', false, activeComputer, data.durationHours, data.price) == true })
+end)
+
+    RegisterNUICallback('addGymMachine', function(data, callback)
+        local ok = lib.callback.await('fixlife_facciones:server:openGymCreator', false, activeComputer, data.type) == true
+    if ok then
+        exitComputer()
+        SendNUIMessage({ action = 'hidePanel' })
+        SetNuiFocus(false, false)
+    end
+    callback({ ok = ok })
+end)
+
 RegisterNUICallback('members', function(_, callback)
     callback(lib.callback.await('fixlife_facciones:server:members', false, activeComputer))
 end)
@@ -576,6 +598,7 @@ RegisterNetEvent('fixlife_facciones:client:useComputer', function(index, feature
     if computers[index] then computers[index].features = features or {} end
     if activeComputer == index then startComputer() end
 end)
+
 
 RegisterNetEvent('fixlife_facciones:client:denied', function()
     activeComputer = nil

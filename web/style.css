@@ -39,6 +39,18 @@ header { display: flex; align-items: flex-start; justify-content: space-between;
 #modal[hidden] { display: none; }
 .finance-tools { display: grid; justify-items: end; gap: 14px; }.finance-tools button { padding: 10px 14px; border: 0; border-radius: 6px; color: #fff; background: #2b9b6b; font-size: 11px; cursor: pointer; }.finance-tools button:hover { background: #35b77d; }
 .vehicle-status { display: block; margin-top: 4px; color: #61d39a; font-size: 9px; font-style: normal; }
+.membership-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+.membership-actions button { padding: 5px 8px; border: 1px solid #573cfa88; border-radius: 5px; color: #c9c2ff; background: #573cfa26; font-size: 9px; cursor: pointer; }
+.membership-actions button.danger { color: #ef9ba0; border-color: #85424b; background: #421d27; }
+.membership-plan-list { display: grid; gap: 8px; }
+.internal-view > #gym-plans-screen { grid-column: 2; min-height: 100%; padding: 28px 30px; background: transparent; }
+#admin-screen > :not([hidden]) .membership-plan { animation: vms-card-in .25s ease-out both; }
+#admin-screen > :not([hidden]) .membership-plan:nth-child(2) { animation-delay: .04s; }
+#admin-screen > :not([hidden]) .membership-plan:nth-child(3) { animation-delay: .08s; }
+#admin-screen > :not([hidden]) .membership-plan:nth-child(4) { animation-delay: .12s; }
+@media (max-width: 760px) { .internal-view > #gym-plans-screen { grid-column: 1; } }
+.membership-plan { display: flex; align-items: center; gap: 16px; padding: 13px 16px; border-radius: 7px; background: #4d51850f; }
+.membership-plan > div { flex: 1; }.membership-plan strong, .membership-plan small { display: block; }.membership-plan small { margin-top: 4px; color: #718198; font-size: 10px; }.membership-plan b { color: #8aff8a; font-size: 13px; }.membership-plan button { padding: 6px 9px; border: 1px solid #573cfa88; border-radius: 5px; color: #c9c2ff; background: #573cfa26; font-size: 9px; cursor: pointer; }
 .transactions { display: grid; gap: 3px; }.transaction { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #233044; }.transaction-icon { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 6px; font-weight: bold; }.transaction-icon.positive { color: #62d39c; background: #1d4034; }.transaction-icon.negative { color: #ed747b; background: #402329; }.transaction div { flex: 1; }.transaction strong, .transaction small { display: block; }.transaction strong { color: #d9e2ed; font-size: 10px; }.transaction small { margin-top: 3px; color: #718198; font-size: 9px; }.transaction b { font-size: 11px; }.transaction b.positive { color: #62d39c; }.transaction b.negative { color: #ed747b; }
 
 /* Inspirado en origen_police: panel compacto, translúcido y con acento cian. */
@@ -87,7 +99,7 @@ header h1, .welcome h2, .card-title h3, .modal-card h2 { text-transform: upperca
 /* Vista principal tipo origen_police: mosaico ancho, sin sidebar. */
 #admin-screen { grid-template-columns: 1fr; }
 #admin-screen > aside { display: none; }
-#members-screen, #vehicles-screen, #finance-screen { grid-column: 1; width: 100%; }
+#members-screen, #vehicles-screen, #finance-screen, #gym-screen, #gym-memberships-screen { grid-column: 1; width: 100%; }
 #admin-screen { min-height: calc(100vh - 32px); background: radial-gradient(circle at 50% 10%, #2355a1aa, transparent 48%), linear-gradient(120deg, #06111e, #163b6b 54%, #071321); }
 .police-dashboard { position: relative; overflow: hidden; padding: 34px 5vw 28px; background: radial-gradient(circle at 50% 10%, #2355a1aa, transparent 48%), linear-gradient(120deg, #06111e, #163b6b 54%, #071321); }
 .police-dashboard { min-height: calc(100vh - 32px); }
@@ -123,7 +135,7 @@ header h1, .welcome h2, .card-title h3, .modal-card h2 { text-transform: upperca
 #admin-screen.internal-view nav button { margin-bottom: 8px; border-radius: 6px; background: #4d51850f; }
 #admin-screen.internal-view nav button.active, #admin-screen.internal-view nav button:hover { color: #fff; background: #24252a5e; box-shadow: none; transform: none; }
 #admin-screen.internal-view nav button.active b { color: #8b78ff; text-shadow: 0 0 10px #573cfa; }
-#admin-screen.internal-view > #members-screen, #admin-screen.internal-view > #vehicles-screen, #admin-screen.internal-view > #finance-screen { grid-column: 2; min-height: 100%; padding: 28px 30px; background: transparent; }
+#admin-screen.internal-view > #members-screen, #admin-screen.internal-view > #vehicles-screen, #admin-screen.internal-view > #finance-screen, #admin-screen.internal-view > #gym-screen, #admin-screen.internal-view > #gym-memberships-screen { grid-column: 2; min-height: 100%; padding: 28px 30px; background: transparent; }
 #admin-screen.internal-view .member-row, #admin-screen.internal-view .vehicle-row, #admin-screen.internal-view .card { border: 0; border-radius: 6px; background: #4d51850f; box-shadow: none; }
 #admin-screen.internal-view .member-row:hover, #admin-screen.internal-view .vehicle-row:hover, #admin-screen.internal-view .card:hover { border-color: transparent; background: #24252a5e; transform: none; }
 #admin-screen.internal-view .member-action, #admin-screen.internal-view .fleet-count { border-color: #573cfa88; color: #c9c2ff; background: #573cfa26; }
@@ -134,7 +146,7 @@ header h1, .welcome h2, .card-title h3, .modal-card h2 { text-transform: upperca
 #admin-screen.internal-view .hire:hover, #admin-screen.internal-view .finance-tools button:hover { background: #452ec7; color: #fff; }
 #admin-screen.internal-view .finance-hero { border: 0; border-radius: 6px; background: #4d51850f; box-shadow: none; }
 #admin-screen.internal-view .finance-icon { color: #d1caff; background: #573cfa55; }
-@media (max-width: 760px) { #admin-screen.internal-view { grid-template-columns: 1fr; } #admin-screen.internal-view > aside { display: none; } #admin-screen.internal-view > #members-screen, #admin-screen.internal-view > #vehicles-screen, #admin-screen.internal-view > #finance-screen { grid-column: 1; } }
+@media (max-width: 760px) { #admin-screen.internal-view { grid-template-columns: 1fr; } #admin-screen.internal-view > aside { display: none; } #admin-screen.internal-view > #members-screen, #admin-screen.internal-view > #vehicles-screen, #admin-screen.internal-view > #finance-screen, #admin-screen.internal-view > #gym-screen, #admin-screen.internal-view > #gym-memberships-screen { grid-column: 1; } }
 #admin-screen:not(.internal-view) { background: #07070cfa; }
 #admin-screen:not(.internal-view) .police-dashboard { background: radial-gradient(circle at 18% 0%, #573cfa44, transparent 42%), radial-gradient(circle at 85% 100%, #452ec755, transparent 38%), #07070cfa; }
 #admin-screen:not(.internal-view) .police-dashboard::after { opacity: .045; }
@@ -182,8 +194,8 @@ header h1, .welcome h2, .card-title h3, .modal-card h2 { text-transform: upperca
 #admin-screen:not([hidden]) { animation: scaleIn .2s ease-out both; }
 #admin-screen > :not([hidden]) { animation: scaleIn .2s ease-out both; }
 #admin-screen.internal-view > aside { animation: vms-slide-in .25s ease-out both; }
-#admin-screen.internal-view > #members-screen:not([hidden]), #admin-screen.internal-view > #vehicles-screen:not([hidden]), #admin-screen.internal-view > #finance-screen:not([hidden]), #admin-screen.internal-view > #settings-screen:not([hidden]) { animation: vms-slide-in .25s ease-out both; }
-#admin-screen.internal-view .member-list, #admin-screen.internal-view .vehicle-list, #admin-screen.internal-view .finance-grid { animation: vms-card-in .25s ease-out .05s both; }
+#admin-screen.internal-view > #members-screen:not([hidden]), #admin-screen.internal-view > #vehicles-screen:not([hidden]), #admin-screen.internal-view > #finance-screen:not([hidden]), #admin-screen.internal-view > #settings-screen:not([hidden]), #admin-screen.internal-view > #gym-screen:not([hidden]), #admin-screen.internal-view > #gym-memberships-screen:not([hidden]), #admin-screen.internal-view > #gym-plans-screen:not([hidden]) { animation: vms-slide-in .25s ease-out both; }
+#admin-screen.internal-view .member-list, #admin-screen.internal-view .vehicle-list, #admin-screen.internal-view .finance-grid, #admin-screen.internal-view .membership-plan-list { animation: vms-card-in .25s ease-out .05s both; }
 #admin-screen:not(.internal-view) > .police-dashboard:not([hidden]) { animation: vms-slide-in .25s ease-out both; }
 #admin-screen.internal-view > aside, #admin-screen:not(.internal-view) > aside { animation: none; }
 .police-dashboard .stats article { flex-direction: row; justify-content: flex-start; gap: 14px; min-height: 116px; padding: 22px; text-align: left; cursor: pointer; }
