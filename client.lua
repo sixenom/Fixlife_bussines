@@ -414,8 +414,22 @@ RegisterNUICallback('updateGymPlan', function(data, callback)
     callback({ ok = lib.callback.await('fixlife_facciones:server:updateGymPlan', false, activeComputer, data.durationHours, data.price) == true })
 end)
 
-    RegisterNUICallback('addGymMachine', function(data, callback)
+RegisterNUICallback('addGymMachine', function(data, callback)
         local ok = lib.callback.await('fixlife_facciones:server:openGymCreator', false, activeComputer, data.type) == true
+    if ok then
+        exitComputer()
+        SendNUIMessage({ action = 'hidePanel' })
+        SetNuiFocus(false, false)
+    end
+    callback({ ok = ok })
+end)
+
+RegisterNUICallback('removeGymMachine', function(data, callback)
+    callback({ ok = lib.callback.await('fixlife_facciones:server:removeGymMachine', false, activeComputer, data.id) == true })
+end)
+
+RegisterNUICallback('editGymMachine', function(data, callback)
+    local ok = lib.callback.await('fixlife_facciones:server:editGymMachine', false, activeComputer, data.id) == true
     if ok then
         exitComputer()
         SendNUIMessage({ action = 'hidePanel' })

@@ -214,6 +214,19 @@ lib.callback.register('fixlife_facciones:server:openGymCreator', function(src, i
         return true
     end)
 
+lib.callback.register('fixlife_facciones:server:removeGymMachine', function(src, index, id)
+    if not hasFeature(index, 'gymManagement') or not getManager(src, index) then return false end
+    if GetResourceState('Fixlife_gyms') ~= 'started' or type(id) ~= 'string' or id == '' then return false end
+    return exports['Fixlife_gyms']:removeCustomMachine(src, id) == true
+end)
+
+lib.callback.register('fixlife_facciones:server:editGymMachine', function(src, index, id)
+    if not hasFeature(index, 'gymManagement') or not getManager(src, index) then return false end
+    if GetResourceState('Fixlife_gyms') ~= 'started' or type(id) ~= 'string' or id == '' then return false end
+    TriggerClientEvent('fixlife_gym:custom:edit', src, id)
+    return true
+end)
+
 lib.callback.register('fixlife_facciones:server:finance', function(src, index)
     if not hasFeature(index, 'finance') then return { ok = false, balance = 0, provider = 'Funcion no disponible' } end
     local _, job = getManager(src, index)

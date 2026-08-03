@@ -269,3 +269,5 @@ header h1, .welcome h2, .card-title h3, .modal-card h2 { text-transform: upperca
   border-radius: 6px;
   background: #573cfa66;
 }
+
+.machine-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }

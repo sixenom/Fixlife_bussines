@@ -353,8 +353,7 @@ gymMachineList.addEventListener('click', async event => {
   const action = button.dataset.machineAction;
   const result = await nui(action === 'remove' ? 'removeGymMachine' : 'editGymMachine', { id: button.dataset.id });
   if (result.ok) {
-    if (action === 'edit') closePanel();
-    else loadGym();
+    if (action === 'remove') loadGym();
   }
 });
 document.querySelector('#save-management-point').addEventListener('click', async () => {
