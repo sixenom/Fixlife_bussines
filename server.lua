@@ -1,6 +1,18 @@
 local objects, occupied, inside = {}, {}, {}
 local deleteComputer, spawnComputer
-local savedPoints = json.decode(LoadResourceFile(GetCurrentResourceName(), 'data/points.json') or '{}') or {}
+local pointFile = json.decode(LoadResourceFile(GetCurrentResourceName(), 'data/points.json') or '{}') or {}
+local savedPoints = pointFile.management or (pointFile.purchase and {} or pointFile)
+local savedPurchasePoints = pointFile.purchase or json.decode(LoadResourceFile(GetCurrentResourceName(), 'data/purchase_points.json') or '{}') or {}
+local needsPointMigration = not pointFile.management or pointFile.purchase == nil
+
+local function savePoints()
+    SaveResourceFile(GetCurrentResourceName(), 'data/points.json', json.encode({
+        management = savedPoints,
+        purchase = savedPurchasePoints
+    }), -1)
+end
+
+if needsPointMigration then savePoints() end
 
 local function applyManagementPoint(computer, point)
     local heading = point.heading or 0.0
@@ -332,13 +344,28 @@ lib.callback.register('fixlife_facciones:server:saveManagementPoint', function(s
         deleteComputer(index)
     end
     local spawned = spawnComputer(index)
-    SaveResourceFile(GetCurrentResourceName(), 'data/points.json', json.encode(savedPoints), -1)
+    savePoints()
     TriggerClientEvent('fixlife_facciones:client:managementPointUpdated', -1, index, pointData)
     if not hadObjects or previousType ~= pointType then
         for player in pairs(inside[index] or {}) do
             TriggerClientEvent('fixlife_facciones:client:objects', player, { [index] = spawned })
         end
     end
+    return true
+end)
+
+lib.callback.register('fixlife_facciones:server:purchasePoints', function()
+    return savedPurchasePoints
+end)
+
+lib.callback.register('fixlife_facciones:server:saveMembershipPurchasePoint', function(src, index, point)
+    if not hasFeature(index, 'gymManagement') or (not hasAccess(src, index) and not isAdmin(src)) or type(point) ~= 'table' then return false end
+    local x, y, z = tonumber(point.x), tonumber(point.y), tonumber(point.z)
+    if not x or not y or not z or math.abs(x) > 10000 or math.abs(y) > 10000 or z < -100 or z > 2000 then return false end
+    if not isInsideZone(index, x, y, z) then return false end
+    savedPurchasePoints[index] = { x = x, y = y, z = z, heading = tonumber(point.heading) or 0 }
+    savePoints()
+    TriggerClientEvent('fixlife_facciones:client:membershipPurchasePointUpdated', -1, index, savedPurchasePoints[index])
     return true
 end)
 

@@ -242,3 +242,30 @@ header h1, .welcome h2, .card-title h3, .modal-card h2 { text-transform: upperca
   .settings-controls { align-items: stretch; flex-direction: column; }
   .management-type-select, .settings-card .management-save { width: 100%; }
 }
+
+/* Las listas crecen internamente; el panel conserva su tamaño. */
+#admin-screen.internal-view .member-list,
+#admin-screen.internal-view .vehicle-list,
+#admin-screen.internal-view .transactions,
+#admin-screen.internal-view .membership-plan-list {
+  max-height: 430px;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #573cfa66 transparent;
+}
+
+#admin-screen.internal-view .member-list::-webkit-scrollbar,
+#admin-screen.internal-view .vehicle-list::-webkit-scrollbar,
+#admin-screen.internal-view .transactions::-webkit-scrollbar,
+#admin-screen.internal-view .membership-plan-list::-webkit-scrollbar { width: 6px; }
+
+#admin-screen.internal-view .member-list::-webkit-scrollbar-thumb,
+#admin-screen.internal-view .vehicle-list::-webkit-scrollbar-thumb,
+#admin-screen.internal-view .transactions::-webkit-scrollbar-thumb,
+#admin-screen.internal-view .membership-plan-list::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: #573cfa66;
+}

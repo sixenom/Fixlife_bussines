@@ -29,6 +29,7 @@ Config.Organizations = {
     gymplaya = {
         label = 'Terminal de gestion',
         job = 'gym1',
+        purchaseGymId = 'Gym_1',
         features = {
             settings = true,
             members = true,

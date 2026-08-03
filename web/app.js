@@ -24,12 +24,16 @@ gymScreen.id = 'gym-screen';
 gymScreen.hidden = true;
 gymScreen.innerHTML = '<header><div><span class="status"></span><span>Gestión del gimnasio</span><h1 id="gym-title">Gimnasio</h1></div></header><div class="stats"><article><span class="icon green"><i class="fa-solid fa-dumbbell"></i></span><div><small>MÁQUINAS CONFIGURADAS</small><strong id="gym-machine-count">—</strong><em>Instaladas en el gimnasio</em></div></article><article><span class="icon blue"><i class="fa-solid fa-id-card"></i></span><div><small>MEMBRESÍAS ACTIVAS</small><strong id="gym-membership-count">—</strong><em>Clientes vigentes</em></div></article><article><span class="icon red"><i class="fa-solid fa-tags"></i></span><div><small>PLANES DISPONIBLES</small><strong id="gym-plan-count">—</strong><em>Configurados para venta</em></div></article></div><section class="card"><div class="card-title"><h3>Máquinas del gimnasio</h3><span id="gym-machine-status">Cargando...</span></div><div class="vehicle-list" id="gym-machine-list"></div></section>';
 document.querySelector('#admin-screen').append(gymScreen);
+gymScreen.querySelector('.stats').hidden = true;
+gymScreen.querySelector('.stats').style.display = 'none';
 const gymMembershipsScreen = document.createElement('div');
 gymMembershipsScreen.id = 'gym-memberships-screen';
 gymMembershipsScreen.hidden = true;
   gymMembershipsScreen.innerHTML = '<header><div><span class="status"></span><span>Gestión del gimnasio</span><h1>Membresías</h1></div></header><div class="stats"><article><span class="icon blue"><i class="fa-solid fa-id-card"></i></span><div><small>MEMBRESÍAS ACTIVAS</small><strong id="gym-membership-total">—</strong><em>Clientes con acceso vigente</em></div></article><article><span class="icon green"><i class="fa-solid fa-tags"></i></span><div><small>PLANES DISPONIBLES</small><strong id="gym-membership-plans">—</strong><em>Planes configurados</em></div></article></div><section class="card"><div class="card-title"><h3>Clientes con membresía</h3><span id="gym-membership-status">Cargando...</span></div><div class="vehicle-list" id="gym-membership-list"></div></section>';
 document.querySelector('#admin-screen').append(gymMembershipsScreen);
 gymMembershipsScreen.insertAdjacentHTML('beforeend', '<section class="card"><div class="card-title"><h3>Precios de membresías</h3><span>SOLO DUEÑO</span></div><div class="membership-plan-list" id="gym-membership-plan-list"></div></section>');
+gymMembershipsScreen.querySelector('.stats').hidden = true;
+gymMembershipsScreen.querySelector('.stats').style.display = 'none';
 gymMembershipsScreen.querySelector('#gym-membership-plan-list')?.closest('.card')?.remove();
 const gymPlansScreen = document.createElement('div');
 gymPlansScreen.id = 'gym-plans-screen';
@@ -40,6 +44,10 @@ const managementPointType = document.createElement('select');
 managementPointType.innerHTML = '<option value="laptop">Laptop con silla y animación</option><option value="tablet">Tablet sin animación</option><option value="object">Objeto existente del mapa</option>';
 managementPointType.className = 'management-type-select';
 const managementPointButton = settingsScreen.querySelector('#save-management-point');
+const membershipPurchasePointButton = document.createElement('button');
+membershipPurchasePointButton.hidden = true;
+membershipPurchasePointButton.className = 'hire management-save';
+membershipPurchasePointButton.textContent = 'Colocar punto de compra de membresías';
 managementPointButton.className = 'hire management-save';
 const settingsCard = settingsScreen.querySelector('.settings-card');
 const settingsStatus = settingsScreen.querySelector('#settings-status');
@@ -62,6 +70,7 @@ settingsCard.querySelector('.empty').className = 'settings-description';
 const settingsControls = document.createElement('div');
 settingsControls.className = 'settings-controls';
 settingsControls.append(managementPointType, managementPointButton);
+settingsControls.append(membershipPurchasePointButton);
 settingsCard.insertBefore(settingsControls, settingsStatus);
 const memberList = document.querySelector('#member-list');
 const vehicleList = document.querySelector('#vehicle-list');
@@ -164,7 +173,7 @@ function renderGym() {
   gymMembershipStatus.textContent = `${memberships.length} cliente${memberships.length === 1 ? '' : 's'}`;
   gymMembershipList.innerHTML = memberships.map(member => `<article class="vehicle-row"><span class="vehicle-icon"><i class="fa-solid fa-user"></i></span><div class="member-info"><strong>${member.firstname ? `${member.firstname} ${member.lastname || ''}` : member.identifier}</strong><small>${member.membership}</small></div><div class="vehicle-owner"><small>VENCE</small><strong>${formatExpiry(member.expires)}</strong><em class="vehicle-status">Activa</em><div class="membership-actions"><button data-membership-action="expiry" data-identifier="${member.identifier}">Cambiar</button><button class="danger" data-membership-action="revoke" data-identifier="${member.identifier}">Revocar</button></div></div></article>`).join('') || '<p class="empty members-empty">No hay clientes con membresía activa.</p>';
   gymMachineStatus.textContent = `${machines.length} configurada${machines.length === 1 ? '' : 's'}`;
-  gymMachineList.innerHTML = machines.map(machine => `<article class="vehicle-row"><span class="vehicle-icon"><i class="fa-solid fa-dumbbell"></i></span><div class="member-info"><strong>${machine.name}</strong><small>${machine.model || 'Sin modelo'}</small></div><div class="vehicle-owner"><small>UBICACIÓN</small><strong>${machine.x?.toFixed?.(2) ?? '—'}, ${machine.y?.toFixed?.(2) ?? '—'}</strong><em class="vehicle-status">Activa</em></div></article>`).join('') || '<p class="empty members-empty">No hay máquinas configuradas.</p>';
+  gymMachineList.innerHTML = machines.map(machine => `<article class="vehicle-row"><span class="vehicle-icon"><i class="fa-solid fa-dumbbell"></i></span><div class="member-info"><strong>${machine.name}</strong><small>${machine.model || 'Sin modelo'}</small></div><div class="vehicle-owner"><small>UBICACIÓN</small><strong>${machine.x?.toFixed?.(2) ?? '—'}, ${machine.y?.toFixed?.(2) ?? '—'}</strong><em class="vehicle-status">Activa</em></div><div class="machine-actions"><button class="member-action" data-machine-action="edit" data-id="${machine.id}">Editar lugar</button><button class="member-action danger" data-machine-action="remove" data-id="${machine.id}">Eliminar</button></div></article>`).join('') || '<p class="empty members-empty">No hay máquinas configuradas.</p>';
 }
 
 async function loadGym() {
@@ -195,6 +204,7 @@ window.addEventListener('message', ({ data }) => {
     item.hidden = feature !== 'dashboard' && features[feature] !== true && !(gymFeature && features.gymManagement === true);
   });
   gymManagementButton.hidden = features.gymManagement !== true;
+  membershipPurchasePointButton.hidden = features.gymManagement !== true;
   gymMembershipsButton.hidden = features.gymManagement !== true;
   gymPlansButton.hidden = features.gymManagement !== true;
   if (features.gymManagement) loadGym();
@@ -337,9 +347,23 @@ gymMembershipPlanList.addEventListener('click', event => {
 gymAddMachine.addEventListener('click', async () => {
   openModal('gymMachine');
 });
+gymMachineList.addEventListener('click', async event => {
+  const button = event.target.closest('[data-machine-action]');
+  if (!button) return;
+  const action = button.dataset.machineAction;
+  const result = await nui(action === 'remove' ? 'removeGymMachine' : 'editGymMachine', { id: button.dataset.id });
+  if (result.ok) {
+    if (action === 'edit') closePanel();
+    else loadGym();
+  }
+});
 document.querySelector('#save-management-point').addEventListener('click', async () => {
   const result = await nui('saveManagementPoint', { type: managementPointType.value });
   document.querySelector('#settings-status').textContent = result.ok ? 'Punto guardado correctamente.' : 'Colocación cancelada o no autorizada.';
+});
+membershipPurchasePointButton.addEventListener('click', async () => {
+  const result = await nui('saveMembershipPurchasePoint');
+  document.querySelector('#settings-status').textContent = result.ok ? 'Punto de compra guardado correctamente.' : 'Colocación cancelada o no autorizada.';
 });
 
 memberList.addEventListener('click', async event => {

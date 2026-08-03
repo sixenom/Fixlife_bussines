@@ -143,6 +143,68 @@ local function loadDict(dict)
     while not HasAnimDictLoaded(dict) do Wait(0) end
 end
 
+local purchasePoints = {}
+local purchaseTargets = {}
+
+local function addMembershipPurchaseTarget(index, point)
+    if purchaseTargets[index] then
+        exports.ox_target:removeZone(purchaseTargets[index])
+        purchaseTargets[index] = nil
+    end
+    purchasePoints[index] = type(point) == 'table' and point or nil
+    if not purchasePoints[index] then return end
+    local organization = computers[index]
+    local gymId = organization and organization.purchaseGymId
+    if not gymId then return end
+    purchaseTargets[index] = exports.ox_target:addSphereZone({
+        coords = vec3(point.x, point.y, point.z),
+        radius = 1.5,
+        options = {
+            {
+                name = ('fixlife_gym:purchase:%s'):format(index),
+                icon = 'fa-solid fa-id-card',
+                label = 'Comprar membresía',
+                onSelect = function()
+                    TriggerEvent('fixlife_gym:openPurchaseMenu', gymId)
+                end
+            }
+        }
+    })
+end
+
+local function placeMembershipPurchasePoint(index)
+    local hit, coords
+    local placing = true
+    CreateThread(function()
+        while placing do
+            hit, _, coords = lib.raycast.fromCamera(511, 4, 30.0)
+            Wait(1)
+        end
+    end)
+    lib.showTextUI('[Enter] Colocar punto de compra  |  [Backspace] Cancelar')
+    while placing do
+        Wait(0)
+        SetPauseMenuActive(false)
+        if hit and coords then
+            DrawMarker(2, coords.x, coords.y, coords.z + 0.15, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.25, 0.25, 0.25, 87, 60, 250, 180, false, true, 2, false, nil, nil, false)
+            if IsControlJustReleased(0, 191) then
+                placing = false
+                lib.hideTextUI()
+                return lib.callback.await('fixlife_facciones:server:saveMembershipPurchasePoint', false, index, {
+                    x = coords.x, y = coords.y, z = coords.z, heading = GetEntityHeading(PlayerPedId())
+                }) == true
+            end
+        end
+        if IsControlJustReleased(0, 177) then
+            placing = false
+            lib.hideTextUI()
+            return false
+        end
+    end
+    lib.hideTextUI()
+    return false
+end
+
 local function playVariant()
     if not seated or usingComputer or exiting then return end
 
@@ -409,6 +471,14 @@ RegisterNUICallback('saveManagementPoint', function(data, callback)
     callback({ ok = ok })
 end)
 
+RegisterNUICallback('saveMembershipPurchasePoint', function(_, callback)
+    local index = activeComputer
+    leaveChair()
+    SendNUIMessage({ action = 'hidePanel' })
+    SetNuiFocus(false, false)
+    callback({ ok = placeMembershipPurchasePoint(index) })
+end)
+
 local function createManagementZone(index)
     local computer = computers[index]
     local zone = computer and computer.zone
@@ -471,6 +541,10 @@ RegisterNetEvent('fixlife_facciones:client:managementPointUpdated', function(ind
     computer.zone.points = point.zone
     createManagementZone(index)
     if nextType == 'object' then addTargets(index, {}) end
+end)
+
+RegisterNetEvent('fixlife_facciones:client:membershipPurchasePointUpdated', function(index, point)
+    addMembershipPurchaseTarget(index, point)
 end)
 
 local function sitInChair(index)
@@ -614,6 +688,8 @@ CreateThread(function()
             createManagementZone(index)
         end
     end
+    local purchasePoints = lib.callback.await('fixlife_facciones:server:purchasePoints', false) or {}
+    for index, point in pairs(purchasePoints) do addMembershipPurchaseTarget(index, point) end
 end)
 
 AddEventHandler('onResourceStop', function(resource)
