@@ -51,7 +51,33 @@ Config.Organizations = {
             username = 'Administrador',
             password = '12345678'
         }
-    }
+    },
+    hospital9335 = {
+        label = 'Terminal de gestion',
+        job = 'ambulance',
+        features = {
+            settings = true,
+            members = true,
+            vehicles = true,
+            finance = true,
+        },
+        zone = {
+                name = "HOSPITAL",
+                points = {
+                    vec3(1117.1999511719, -1559.9000244141, 40.0),
+                    vec3(1124.0999755859, -1559.9000244141, 40.0),
+                    vec3(1124.0999755859, -1566.9499511719, 40.0),
+                    vec3(1117.1999511719, -1567.0, 40.0),
+                },
+                thickness = 4.0,
+        },
+        login = {
+            logo = 'logos/lspd.webp',
+            username = 'Administrador',
+            password = '12345678'
+        }
+    },
+
 }
 
 Config.ManagementTypes = {

@@ -144,32 +144,23 @@ local function loadDict(dict)
 end
 
 local purchasePoints = {}
-local purchaseTargets = {}
+local purchaseTextPoints = {}
 
 local function addMembershipPurchaseTarget(index, point)
-    if purchaseTargets[index] then
-        exports.ox_target:removeZone(purchaseTargets[index])
-        purchaseTargets[index] = nil
+    if purchaseTextPoints[index] then
+        TriggerEvent('Fix_3dTextUi:eliminar', purchaseTextPoints[index])
+        purchaseTextPoints[index] = nil
     end
     purchasePoints[index] = type(point) == 'table' and point or nil
     if not purchasePoints[index] then return end
     local organization = computers[index]
     local gymId = organization and organization.purchaseGymId
     if not gymId then return end
-    purchaseTargets[index] = exports.ox_target:addSphereZone({
-        coords = vec3(point.x, point.y, point.z),
-        radius = 1.5,
-        options = {
-            {
-                name = ('fixlife_gym:purchase:%s'):format(index),
-                icon = 'fa-solid fa-id-card',
-                label = 'Comprar membresía',
-                onSelect = function()
-                    TriggerEvent('fixlife_gym:openPurchaseMenu', gymId)
-                end
-            }
-        }
-    })
+    local pointId = ('fixlife_gym:purchase:%s'):format(index)
+    TriggerEvent('Fix_3dTextUi:crear', pointId, vec3(point.x, point.y, point.z+0.8), 5.0, 1.0, 1.0, '#00D3FC', {
+        {key = 'E', text = 'Comprar membresia', event = 'fixlife_gym:openPurchaseMenu', args = {gymId}}
+    }, nil, 'image', 'bicep.svg')
+    purchaseTextPoints[index] = pointId
 end
 
 local function placeMembershipPurchasePoint(index)
